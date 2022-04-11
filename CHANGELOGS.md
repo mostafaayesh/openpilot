@@ -1,5 +1,9 @@
 sunnypilot - Version 0.8.12-4 (2022-04-09)
 ========================
+* HOTFIX🛠: Add filter to ACC_HUD signal
+
+sunnypilot - Version 0.8.12-4 (2022-04-09)
+========================
 * NEW❗: Custom Stock Longitudinal Control by setting the target speed via openpilot's "MAX" speed thanks to multikyd!
   * Speed Limit Control
   * Vision-based Turn Control
