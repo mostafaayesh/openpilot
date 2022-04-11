@@ -34,7 +34,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("ESP_DISABLED", "VSA_STATUS", 1),
     ("USER_BRAKE", "VSA_STATUS", 0),
     ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
-    ("HUD_LEAD", "ACC_HUD", 0),
     ("STEER_STATUS", "STEER_STATUS", 5),
     ("GEAR_SHIFTER", gearbox_msg, 0),
     ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
@@ -84,6 +83,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
       ("BRAKE_LIGHTS", "ACC_CONTROL", 0),
+      ("HUD_LEAD", "ACC_HUD", 0),
     ]
     checks += [
       ("EPB_STATUS", 50),
