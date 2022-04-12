@@ -89,11 +89,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("CAR_SPEED", 10),
     ]
 
-    if CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
-      signals += [
-        ("HUD_LEAD", "ACC_HUD", 0),
-      ]
-
     if not CP.openpilotLongitudinalControl:
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
@@ -101,6 +96,10 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("ACCEL_COMMAND", "ACC_CONTROL", 0),
         ("AEB_STATUS", "ACC_CONTROL", 0),
       ]
+      if CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
+        signals += [
+          ("HUD_LEAD", "ACC_HUD", 0),
+        ]
       checks += [
         ("ACC_HUD", 10),
       ]
