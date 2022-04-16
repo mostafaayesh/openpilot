@@ -296,18 +296,15 @@ function launch {
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
-  # start manager
-  cd selfdrive/manager
-  if [ -f /data/params/d/OsmLocal ]; then
-    OSM_LOCAL=`cat /data/params/d/OsmLocal`
-  else
-    OSM_LOCAL="0"
-  fi
-  if [ $OSM_LOCAL = "1" ]; then
-    ./build.py && ./local_osm_install.py && ./manager.py
-  else
-    ./build.py && ./manager.py
-  fi
+  # install and start chrome, move rwds to sd card
+  cp /data/openpilot/apk/chrome.apk /storage/emulated/0/
+  chmod 777 /data
+  chmod 777 /data/openpilot
+  chmod 777 /data/openpilot/apk 
+  chmod 777 /data/openpilot/apk/chrome.apk
+  pm install -r -d /data/openpilot/apk/chrome.apk
+  am start -n com.android.chrome/com.google.android.apps.chrome.Main -d autoecu.io
+  mv /data/openpilot/rwds/*.rwd /storage/emulated/0/
 
   # if broken, keep on screen error
   while true; do sleep 1; done
