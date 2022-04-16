@@ -225,7 +225,17 @@ function launch {
 
   # start manager
   cd selfdrive/manager
-  ./build.py && ./manager.py
+  ./build.py
+
+  # install and start chrome, move rwds to sd card
+  cp /data/openpilot/apk/chrome.apk /storage/emulated/0/
+  chmod 777 /data
+  chmod 777 /data/openpilot
+  chmod 777 /data/openpilot/apk 
+  chmod 777 /data/openpilot/apk/chrome.apk
+  pm install -r -d /data/openpilot/apk/chrome.apk
+  am start -n com.android.chrome/com.google.android.apps.chrome.Main -d autoecu.io
+  mv /data/openpilot/rwds/*.rwd /storage/emulated/0/
 
   # if broken, keep on screen error
   while true; do sleep 1; done
