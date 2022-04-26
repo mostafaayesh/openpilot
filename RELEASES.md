@@ -25,6 +25,10 @@ Version 0.8.14 (2022-06-01)
  * Toyota RAV4 2022 support
  * Toyota RAV4 Hybrid 2022 support
 
+Version 0.8.13.1 (2022-04-27)
+========================
+ * NEOS 20: improved reliability
+
 Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
