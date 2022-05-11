@@ -60,14 +60,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
       tire_stiffness_factor = 0.82
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 3.1
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
@@ -80,14 +80,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -119,7 +119,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -149,14 +149,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -169,14 +169,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -205,14 +205,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -225,14 +225,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.73  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.97
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -262,14 +262,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75 * 1.15
       tire_stiffness_factor = 0.5
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -291,14 +291,14 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -311,14 +311,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9 if CAR.KIA_NIRO_HEV_2021 else 13.73  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -348,14 +348,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        max_torque = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kp = 1.0 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.1 / MAX_LAT_ACCEL
         ret.lateralTuning.torque.friction = friction
       else:
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
