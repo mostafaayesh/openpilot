@@ -54,6 +54,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_metric.png",
     },
     {
+      "EnableGasOnCruise",
+      "Enable Gas on Cruise",
+      "Pressing the gas pedal will NOT disengage openpilot. Use at your own risk!!",
+      "../assets/offroad/icon_gas.png",
+    },
+    {
       "RecordFront",
       "Record and Upload Driver Camera",
       "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
