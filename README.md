@@ -8,3 +8,5 @@ currently work-in-progress
 credits
 ---
 @krkeegan
+@spektor56
+@aragon7777
