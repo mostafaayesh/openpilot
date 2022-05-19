@@ -391,8 +391,8 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    ret.readdistancelines = self.CS.read_distance_lines
+    
+    ret.distanceLines = self.CS.read_distance_lines
 
     buttonEvents = []
 
