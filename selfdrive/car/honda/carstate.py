@@ -301,6 +301,8 @@ class CarState(CarStateBase):
     if self.read_distance_lines != self.read_distance_lines_prev:
       self.read_distance_lines_prev = self.read_distance_lines
 
+    ret.distanceLines = self.read_distance_lines
+
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     if self.CP.carFingerprint in (CAR.CIVIC, ):
       self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
