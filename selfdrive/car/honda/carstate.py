@@ -170,7 +170,7 @@ class CarState(CarStateBase):
     
     # Follow distance adjustment
     self.trMode = 0
-    self.read_distance_lines_prev = 4
+    self.read_distance_lines_prev = 3
     self.lead_distance = 255
 
   def update(self, cp, cp_cam, cp_body):
@@ -292,7 +292,7 @@ class CarState(CarStateBase):
     # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
     if self.cruise_setting == CruiseSetting.DISTANCE_ADJ:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
-        self.trMode = (self.trMode + 1 ) % 4
+        self.trMode = (self.trMode + 1 ) % 3
 
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
