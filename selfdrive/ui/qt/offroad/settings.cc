@@ -63,7 +63,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "DynamicFollowDistance",
       "Dynamic Follow Distance",
       "Adjust follow distance using steering wheel distance adjustment button. Use at your own risk!!",
-      "../assets/offroad/icon_gas.png",
+      "../assets/offroad/icon_follow.png",
     },
     {
       "RecordFront",
