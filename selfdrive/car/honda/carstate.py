@@ -171,7 +171,6 @@ class CarState(CarStateBase):
     
     # Follow distance adjustment
     self.trMode = 0
-    self.read_distance_lines_prev = 3
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -224,6 +223,7 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
 
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
@@ -285,17 +285,10 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
-    if self.cruise_setting == CruiseSetting.DISTANCE_ADJ:
-      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
-        self.trMode = (self.trMode + 1 ) % 3
-
-    self.prev_cruise_setting = self.cruise_setting
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
-    self.read_distance_lines = self.trMode + 1
-    if self.read_distance_lines != self.read_distance_lines_prev:
-      self.read_distance_lines_prev = self.read_distance_lines
-
-    ret.distanceLines = self.read_distance_lines
+    if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
+      if self.cruise_setting == 0:
+        self.trMode = (self.trMode + 1) % 3
+    ret.distanceLines = self.trMode + 1
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     if self.CP.carFingerprint in (CAR.CIVIC, ):
