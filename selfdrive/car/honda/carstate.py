@@ -3,6 +3,7 @@ from collections import defaultdict
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
+from common.params import Params
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
@@ -170,6 +171,8 @@ class CarState(CarStateBase):
     self.v_cruise_pcm_prev = 0
     
     # Follow distance adjustment
+    params = Params()
+    self.dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
     self.trMode = 0
 
   def update(self, cp, cp_cam, cp_body):
@@ -284,11 +287,17 @@ class CarState(CarStateBase):
       if ret.brake > 0.1:
         ret.brakePressed = True
 
-    # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
-    if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
-      if self.cruise_setting == 0:
-        self.trMode = (self.trMode + 1) % 3
-    ret.distanceLines = self.trMode + 1
+    # Default follow distance 3 bars
+    ret.distanceLines = 3
+    
+    # Dynamic follow distance
+    if self.dynamic_follow_distance:
+      # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
+      if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
+        if self.cruise_setting == 0:
+          self.trMode = (self.trMode + 1) % 3
+      ret.distanceLines = self.trMode + 1
+      
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     if self.CP.carFingerprint in (CAR.CIVIC, ):

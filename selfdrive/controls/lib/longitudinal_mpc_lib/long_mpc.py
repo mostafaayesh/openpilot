@@ -4,6 +4,7 @@ import numpy as np
 
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip, interp
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
@@ -195,6 +196,8 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.desired_TF = T_FOLLOW
+    params = Params()
+    self.dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
     self.reset()
     self.source = SOURCES[2]
 
@@ -332,7 +335,8 @@ class LongitudinalMpc:
       self.desired_TF = T_FOLLOW
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=False):
-    self.update_TF(carstate)
+    if self.dynamic_follow_distance:
+      self.update_TF(carstate)
     self.set_weights()
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
