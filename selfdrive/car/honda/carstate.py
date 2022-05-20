@@ -172,7 +172,6 @@ class CarState(CarStateBase):
     # Follow distance adjustment
     self.trMode = 0
     self.read_distance_lines_prev = 3
-    self.lead_distance = 255
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -184,7 +183,6 @@ class CarState(CarStateBase):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
-    self.prev_lead_distance = self.lead_distance
 
     # ******************* parse out can *******************
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
