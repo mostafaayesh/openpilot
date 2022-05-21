@@ -172,7 +172,7 @@ class CarState(CarStateBase):
     # Follow distance adjustment
     params = Params()
     self.dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
-    self.trMode = 0
+    self.trMode = 2
     # Default follow distance 3 bars
     self.read_distance_lines = 3
 
@@ -297,7 +297,7 @@ class CarState(CarStateBase):
       # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
       if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
         if self.cruise_setting == 0:
-          self.trMode = (self.trMode + 1) % 3
+          self.trMode = (self.trMode - 1) % 3
       self.read_distance_lines = self.trMode + 1
     ret.distanceLines = self.read_distance_lines
       
