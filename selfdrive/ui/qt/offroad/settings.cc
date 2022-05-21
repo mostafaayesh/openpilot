@@ -104,6 +104,28 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 }
 
+ForkPanel::ForkPanel(SettingsWindow *parent) : ListWidget(parent) {
+  // param, title, desc, icon
+  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+    {
+      "EnableGasOnCruise",
+      "Enable Gas on Cruise",
+      "Pressing the gas pedal will NOT disengage openpilot. Use at your own risk!!",
+      "../assets/offroad/icon_gas.png",
+    },
+  };
+
+  for (auto &[param, title, desc, icon] : toggles) {
+    auto toggle = new ParamControl(param, title, desc, icon, this);
+    bool locked = params.getBool((param + "Lock").toStdString());
+    toggle->setEnabled(!locked);
+    if (!locked) {
+      connect(uiState(), &UIState::offroadTransition, toggle, &ParamControl::setEnabled);
+    }
+    addItem(toggle);
+  }
+}
+
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
   addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
@@ -390,6 +412,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
+    {"Fork", new ForkPanel(this)},
     {"Software", new SoftwarePanel(this)},
   };
 
