@@ -54,18 +54,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_metric.png",
     },
     {
-      "EnableGasOnCruise",
-      "Enable Gas on Cruise",
-      "Pressing the gas pedal will NOT disengage openpilot. Use at your own risk!!",
-      "../assets/offroad/icon_gas.png",
-    },
-    {
-      "DynamicFollowDistance",
-      "Dynamic Follow Distance",
-      "Adjust follow distance using steering wheel distance adjustment button. Use at your own risk!!",
-      "../assets/offroad/icon_follow.png",
-    },
-    {
       "RecordFront",
       "Record and Upload Driver Camera",
       "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -98,6 +86,36 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_speed_limit.png",
     });
   }
+
+  for (auto &[param, title, desc, icon] : toggles) {
+    auto toggle = new ParamControl(param, title, desc, icon, this);
+    bool locked = params.getBool((param + "Lock").toStdString());
+    toggle->setEnabled(!locked);
+    if (!locked) {
+      connect(uiState(), &UIState::offroadTransition, toggle, &ParamControl::setEnabled);
+    }
+    addItem(toggle);
+  }
+}
+
+ForkPanel::ForkPanel(SettingsWindow *parent) : ListWidget(parent) {
+  // param, title, desc, icon
+  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+    {
+      "EnableGasOnCruise",
+      "Enable Gas on Cruise",
+      "Pressing the gas pedal will NOT disengage openpilot. Use at your own risk!!",
+      "../assets/offroad/icon_gas.png",
+    },
+    {
+      "DynamicFollowDistance",
+      "Dynamic Follow Distance",
+      "Adjust follow distance using steering wheel distance adjustment button. Use at your own risk!!",
+      "../assets/offroad/icon_follow.png",
+    },
+  };
+
+  Params params;
 
   for (auto &[param, title, desc, icon] : toggles) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
@@ -383,7 +401,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
   )");
   close_btn->setFixedSize(200, 200);
-  sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
 
@@ -396,6 +413,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
+    {"Fork", new ForkPanel(this)},
     {"Software", new SoftwarePanel(this)},
   };
 

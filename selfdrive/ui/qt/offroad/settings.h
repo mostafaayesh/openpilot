@@ -57,6 +57,12 @@ public:
   explicit TogglesPanel(SettingsWindow *parent);
 };
 
+class ForkPanel : public ListWidget {
+  Q_OBJECT
+public:
+  explicit ForkPanel(SettingsWindow *parent);
+};
+
 class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:
