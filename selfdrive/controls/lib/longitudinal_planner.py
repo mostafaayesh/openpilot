@@ -6,6 +6,7 @@ from common.numpy_fast import interp
 import cereal.messaging as messaging
 from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
+from common.params import Params
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
@@ -16,9 +17,15 @@ from selfdrive.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2  # car smoothly decel at .2m/s^2 when user is distracted
-A_CRUISE_MIN = -3.2
-A_CRUISE_MAX_VALS = [1.2, 1.7, 1.8, 2.0, 2.1]
-A_CRUISE_MAX_BP = [0., 5., 11., 24., 37.]
+
+A_CRUISE_MIN = -1.2
+A_CRUISE_MAX_VALS = [1.2, 1.2, 0.8, 0.6]
+A_CRUISE_MAX_BP = [0., 15., 25., 40.]
+
+if Params().get_bool('PedalTune'): 
+  A_CRUISE_MIN = -3.2
+  A_CRUISE_MAX_VALS = [1.2, 1.7, 1.8, 2.0, 2.1]
+  A_CRUISE_MAX_BP = [0., 5., 11., 24., 37.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]

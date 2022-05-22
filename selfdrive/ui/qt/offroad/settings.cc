@@ -113,6 +113,12 @@ ForkPanel::ForkPanel(SettingsWindow *parent) : ListWidget(parent) {
       "Adjust follow distance using steering wheel distance adjustment button. Use at your own risk!!",
       "../assets/offroad/icon_follow.png",
     },
+    {
+      "PedalTune",
+      "Tuning for comma pedal (honda only)",
+      "Larger max acceleration for comma pedal (honda only). Use at your own risk!!",
+      "../assets/offroad/icon_gas.png",
+    },
   };
 
   Params params;
