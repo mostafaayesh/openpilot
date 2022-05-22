@@ -1,3 +1,4 @@
+from common.params import Params
 from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
 
@@ -104,6 +105,9 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
   bus_lkas = get_lkas_cmd_bus(CP.carFingerprint, radar_disabled)
 
+  params = Params()
+  dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
+
   if CP.openpilotLongitudinalControl:
     if CP.carFingerprint in HONDA_BOSCH:
       acc_hud_values = {
@@ -124,8 +128,8 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
         'HUD_LEAD': hud.car,
-        'HUD_DISTANCE_3': 1 if hud.car != 0 else 0,
-        'HUD_DISTANCE': hud.dist_lines,    # max distance setting on display
+        'HUD_DISTANCE_3': 1 if (hud.car != 0 and dynamic_follow_distance) else 0,
+        'HUD_DISTANCE': hud.dist_lines,
         'IMPERIAL_UNIT': int(not is_metric),
         'SET_ME_X01_2': 1,
         'SET_ME_X01': 1,
