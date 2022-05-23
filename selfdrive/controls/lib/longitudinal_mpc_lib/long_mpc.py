@@ -196,6 +196,7 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.desired_TF = T_FOLLOW
+    self.traffic_multiplier = 0.85
     params = Params()
     self.dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
     self.reset()
@@ -327,8 +328,9 @@ class LongitudinalMpc:
       # At slow speeds more time, decrease time up to 60mph
       # in mph ~= 5     10   15   20  25     30    35     40  45     50    55     60  65     70    75     80  85     90
       x_vel = [0, 2.25, 4.5, 6.75, 9, 11.25, 13.5, 15.75, 18, 20.25, 22.5, 24.75, 27, 29.25, 31.5, 33.75, 36, 38.25, 40.5]
-      y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 0.979, 0.9461, 0.9156, 0.9156, 0.9156, 0.9156]
-      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
+      y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05]
+      y_dist_adjusted = [dist * self.traffic_multiplier for dist in y_dist]
+      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist_adjusted)
     elif carstate.distanceLines == 2: # Relaxed
       self.desired_TF = 1.25
     elif carstate.distanceLines == 3: # Stock
