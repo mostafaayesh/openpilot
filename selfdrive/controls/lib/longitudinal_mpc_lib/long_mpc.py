@@ -205,8 +205,7 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.desired_TF = T_FOLLOW
-    params = Params()
-    self.dynamic_follow_distance = params.get_bool("DynamicFollowDistance")
+    self.dynamic_follow_distance = Params().get_bool("DynamicFollowDistance")
     self.reset()
     self.source = SOURCES[2]
 
@@ -334,8 +333,8 @@ class LongitudinalMpc:
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
-    self.cruise_min_a = min_a
-    self.cruise_max_a = max_a
+    self.cruise_min_a = -3.2 if Params().get_bool("PedalTune") else min_a
+    self.cruise_max_a = 3.2 if Params().get_bool("PedalTune") else max_a
 
   def update_TF(self, carstate):
     if carstate.distanceLines == 1: # Traffic
