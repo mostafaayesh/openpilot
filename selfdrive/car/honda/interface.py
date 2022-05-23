@@ -78,6 +78,12 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+    
+    # pedal tweak
+    ret.longitudinalTuning.kpBP = [0., 11., 24., 37.] # 0, 25, 55, 85 mph, 
+    ret.longitudinalTuning.kpV = [1.2, 1.6, 1.9, 2.1]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     eps_modified = False
     for fw in car_fw:
