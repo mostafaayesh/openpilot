@@ -24,8 +24,8 @@ A_CRUISE_MAX_BP = [0., 15., 25., 40.]
 
 if Params().get_bool('PedalTune'): 
   A_CRUISE_MIN = -3.2
-  A_CRUISE_MAX_VALS = [1.2, 1.7, 1.8, 2.0, 2.1]
-  A_CRUISE_MAX_BP = [0., 5., 11., 24., 37.]
+  A_CRUISE_MAX_VALS = [1.3, 1.2, 1.1, 1.0]
+  A_CRUISE_MAX_BP = [0., 15., 25., 40.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
