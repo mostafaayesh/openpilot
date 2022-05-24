@@ -295,8 +295,8 @@ class LongitudinalMpc():
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
-    self.cruise_min_a = min_a
-    self.cruise_max_a = max_a
+    self.cruise_min_a = -3.2
+    self.cruise_max_a = 3.2
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=False):
     v_ego = self.x0[1]
