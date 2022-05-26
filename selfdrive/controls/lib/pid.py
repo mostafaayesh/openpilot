@@ -22,13 +22,15 @@ class PIDController:
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
-    self.k_f = k_f   # feedforward gain
+    self._k_f = k_f   # feedforward gain
     if isinstance(self._k_p, Number):
       self._k_p = [[0], [self._k_p]]
     if isinstance(self._k_i, Number):
       self._k_i = [[0], [self._k_i]]
     if isinstance(self._k_d, Number):
       self._k_d = [[0], [self._k_d]]
+    if isinstance(self._k_f, Number):
+      self._k_f = [[0], [self._k_f]]
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -55,6 +57,10 @@ class PIDController:
   def k_d(self):
     return self.op_params.get('lat_d')
     # return interp(self.speed, self._k_d[0], self._k_d[1])
+
+  @property
+  def k_f(self):
+    return self.op_params.get('lat_f')
 
   def _check_saturation(self, control, check_saturation, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)

@@ -136,9 +136,10 @@ class opParams:
 
       'dynamic_follow': Param('stock', str, static=True, hidden=True),
       'lane_speed_alerts': Param('silent', str, static=True, hidden=True),
-      'lat_p': Param(.0, NUMBER, live=True),
-      'lat_i': Param(.0, NUMBER, live=True),
+      'lat_p': Param(.1575, NUMBER, live=True),
+      'lat_i': Param(.05175, NUMBER, live=True),
       'lat_d': Param(0.0, NUMBER, live=True),
+      'lat_f': Param(.00006, NUMBER, live=True),
     }
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
