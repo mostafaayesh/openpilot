@@ -81,6 +81,7 @@ class CarInterfaceBase(ABC):
     params = Params()
     if params.get_bool("EnableGasOnCruise"):
       ret.unsafeMode = ret.unsafeMode | 1
+    ret.unsafeMode = ret.unsafeMode | 16  # ALLOW_LATERAL_ONLY
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque

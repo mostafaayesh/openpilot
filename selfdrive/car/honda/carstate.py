@@ -176,6 +176,9 @@ class CarState(CarStateBase):
     # Default follow distance 4 bars
     self.read_distance_lines = 4
 
+    # Lateral enabled (allows lateral only control)
+    self.lateral_enabled = False
+
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
@@ -300,7 +303,12 @@ class CarState(CarStateBase):
           self.trMode = (self.trMode - 1) % 4
       self.read_distance_lines = self.trMode + 1
     ret.distanceLines = self.read_distance_lines
-      
+    
+    # Lateral control
+    if self.prev_cruise_setting != CruiseSetting.LKAS_BTN:
+      if self.cruise_setting == CruiseSetting.LKAS_BTN:
+          self.lateral_enabled = not self.lateral_enabled
+    ret.lateralEnabled = self.lateral_enabled
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     if self.CP.carFingerprint in (CAR.CIVIC, ):
