@@ -180,6 +180,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SubscriberInfo", PERSISTENT},
     {"TermsVersion", PERSISTENT},
     {"Timezone", PERSISTENT},
+    {"GapAdjustCruiseMultiplier", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"TurnSpeedControl", PERSISTENT},
     {"TurnVisionControl", PERSISTENT},

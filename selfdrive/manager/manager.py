@@ -49,6 +49,7 @@ def manager_init():
     ("EndToEndToggle", "1"),
     ("GapAdjustCruiseTr", "0"),
     ("GapAdjustCruise", "1"),
+    ("GapAdjustCruiseMultiplier", "1"),
     ("GpxDeleteAfterUpload", "1"),
     ("GpxDeleteIfUploaded", "1"),
     ("HasAcceptedTerms", "0"),

@@ -546,6 +546,12 @@ SunnypilotPanel::SunnypilotPanel(QWidget* parent) : QWidget(parent) {
                                   "../assets/offroad/icon_dynamic_gac.png",
                                   this));
 
+  toggles.append(new ParamControl("GapAdjustCruiseMultiplier",
+                                  "Enable Gap Adjust Cruise*",
+                                  "Enable the Interval button on the steering wheel to adjust the cruise gap.\n*Only available to cars with openpilot Longitudinal Control*",
+                                  "../assets/offroad/icon_dynamic_gac.png",
+                                  this));
+
   toggles.append(new ParamControl("StockResumeAlt",
                                   "Stop N' Go Resume Alternative",
                                   "Offer alternative behavior to auto resume when stopped behind a lead car using stock SCC/ACC. This feature removes the repeating prompt chime when stopped and/or allows some cars to use auto resume (i.e., Genesis).",
@@ -607,6 +613,8 @@ SunnypilotPanel::SunnypilotPanel(QWidget* parent) : QWidget(parent) {
   toggle_layout->addWidget(new AutoLaneChangeTimer());
   toggle_layout->addWidget(horizontal_line());
   toggle_layout->addWidget(new SpeedLimitValueOffset());
+  toggle_layout->addWidget(horizontal_line());
+  toggle_layout->addWidget(new GapAdjustCruiseMultiplier());
   toggle_layout->addWidget(horizontal_line());
   toggle_layout->addWidget(new BrightnessControl());
   toggle_layout->addWidget(horizontal_line());
