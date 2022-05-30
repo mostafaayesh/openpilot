@@ -524,6 +524,68 @@ void SpeedLimitValueOffset::refresh() {
   btnplus.setText("+");
 }
 
+// Speed Limit Control Custom Offset
+GapAdjustCruiseMultiplier::GapAdjustCruiseMultiplier() : AbstractControl("Gap Adjust Cruise Traffic Multiplier", "Set multiplier for traffic profile follow distance", "../assets/offroad/icon_speed_limit.png") {
+
+  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("GapAdjustCruiseMultiplier"));
+    float value = str.toFloat();
+    value = value - 0.05;
+    if (value <= 0.70 ) {
+      value = 0.7;
+    }
+    QString values = QString::number(value);
+    //QUIState::ui_state.speed_lim_off = value;
+    params.put("GapAdjustCruiseMultiplier", values.toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("GapAdjustCruiseMultiplier"));
+    float value = str.toFloat();
+    value = value + 0.05;
+    if (value >= 1.0) {
+      value = 1.0;
+    }
+    QString values = QString::number(value);
+    //QUIState::ui_state.speed_lim_off = value;
+    params.put("GapAdjustCruiseMultiplier", values.toStdString());
+    refresh();
+  });
+  refresh();
+}
+
+void GapAdjustCruiseMultiplier::refresh() {
+  label.setText(QString::fromStdString(params.get("GapAdjustCruiseMultiplier")));
+  btnminus.setText("-");
+  btnplus.setText("+");
+}
+
 // Camera Offset Value (Default offset value for C3 is 0.04 (4cm but in meters)).
 CameraOffset::CameraOffset() : AbstractControl("Camera Offset Value (cm)",
                                                "Hack to trick vehicle to be left or right biased in its lane. Decreasing the value will make the car keep more right, increasing will make it keep more left. Must be set while offroad",

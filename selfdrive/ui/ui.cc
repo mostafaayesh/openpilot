@@ -241,6 +241,7 @@ static void update_status(UIState *s) {
       s->scene.speed_limit_value_offset = std::stoi(Params().get("SpeedLimitValueOffset"));
       s->scene.gap_adjust_cruise = Params().getBool("GapAdjustCruise");
       s->scene.gap_adjust_cruise_tr = std::stoi(Params().get("GapAdjustCruiseTr"));
+      s->scene.gap_adjust_cruise_multiplier = std::stof(Params().get("GapAdjustCruiseMultiplier"));
     }
     // Invisible until we receive a calibration message.
     s->scene.world_objects_visible = false;
