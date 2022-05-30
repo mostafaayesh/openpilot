@@ -110,3 +110,18 @@ private:
 
   void refresh();
 };
+
+class CameraOffset : public AbstractControl {
+  Q_OBJECT
+
+public:
+  CameraOffset();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  void refresh();
+};

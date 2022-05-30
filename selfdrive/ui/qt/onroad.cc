@@ -217,11 +217,12 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(300, 0, 30, 30);
+  btns_layout->setContentsMargins(282, 0, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignBottom);
 
   // Dynamic lane profile button
+  prev_dynamic_lane_profile = -1;
   QString initDlpBtn = "";
   dlpBtn = new QPushButton(initDlpBtn);
   QObject::connect(dlpBtn, &QPushButton::clicked, [=]() {
@@ -249,6 +250,38 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
     dlpBtn->hide();
   }
 
+  // Dynamic gap adjust cruise button
+  prev_gap_adjust_cruise_tr = -1;
+  QString initGacBtn = "";
+  gacBtn = new QPushButton(initGacBtn);
+  QObject::connect(gacBtn, &QPushButton::clicked, [=]() {
+    QUIState::ui_state.scene.gap_adjust_cruise_tr = QUIState::ui_state.scene.gap_adjust_cruise_tr - 1;
+    if (QUIState::ui_state.scene.gap_adjust_cruise_tr < 0) {
+      QUIState::ui_state.scene.gap_adjust_cruise_tr = 3;
+    }
+    if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 3) {
+      Params().put("GapAdjustCruiseTr", "3", 1);
+      gacBtn->setText("Far\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 2) {
+      Params().put("GapAdjustCruiseTr", "2", 1);
+      gacBtn->setText("Normal\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 1) {
+      Params().put("GapAdjustCruiseTr", "1", 1);
+      gacBtn->setText("Relax\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 0) {
+      Params().put("GapAdjustCruiseTr", "0", 1);
+      gacBtn->setText("Traffic\nGap");
+    }
+  });
+  gacBtn->setFixedWidth(200);
+  gacBtn->setFixedHeight(200);
+  btns_layout->addWidget(gacBtn, 0, Qt::AlignLeft);
+  btns_layout->addStretch();
+
+  if (QUIState::ui_state.scene.gap_adjust_cruise) {
+    gacBtn->hide();
+  }
+
   setStyleSheet(R"(
     QPushButton {
       color: white;
@@ -262,15 +295,37 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void ButtonsWindow::updateState(const UIState &s) {
-  if (QUIState::ui_state.scene.dynamic_lane_profile == 0) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(0)));
-    dlpBtn->setText("Lane\nonly");
-  } else if (QUIState::ui_state.scene.dynamic_lane_profile == 1) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(1)));
-    dlpBtn->setText("Lane\nless");
-  } else if (QUIState::ui_state.scene.dynamic_lane_profile == 2) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(2)));
-    dlpBtn->setText("Auto\nLane");
+  const SubMaster &sm = *(s.sm);
+  const auto gapAdjustCruiseTr = sm["carState"].getCarState().getGapAdjustCruiseTr();
+  if (prev_dynamic_lane_profile != QUIState::ui_state.scene.dynamic_lane_profile) {
+    prev_dynamic_lane_profile = QUIState::ui_state.scene.dynamic_lane_profile;
+    if (QUIState::ui_state.scene.dynamic_lane_profile == 0) {
+      dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(0)));
+      dlpBtn->setText("Lane\nonly");
+    } else if (QUIState::ui_state.scene.dynamic_lane_profile == 1) {
+      dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(1)));
+      dlpBtn->setText("Lane\nless");
+    } else if (QUIState::ui_state.scene.dynamic_lane_profile == 2) {
+      dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(2)));
+      dlpBtn->setText("Auto\nLane");
+    }
+  }
+
+  if (prev_gap_adjust_cruise_tr != gapAdjustCruiseTr) {
+    prev_gap_adjust_cruise_tr = gapAdjustCruiseTr;
+    if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 3 || gapAdjustCruiseTr == 3) {
+      gacBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(gacBtnColors.at(3)));
+      gacBtn->setText("Far\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 2 || gapAdjustCruiseTr == 2) {
+      gacBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(gacBtnColors.at(2)));
+      gacBtn->setText("Normal\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 1 || gapAdjustCruiseTr == 1) {
+      gacBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(gacBtnColors.at(1)));
+      gacBtn->setText("Relax\nGap");
+    } else if (QUIState::ui_state.scene.gap_adjust_cruise_tr == 0 || gapAdjustCruiseTr == 0) {
+      gacBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(gacBtnColors.at(0)));
+      gacBtn->setText("Traffic\nGap");
+    }
   }
 }
 
