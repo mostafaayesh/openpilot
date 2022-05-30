@@ -424,59 +424,58 @@ class Controls:
     cur_time = self.sm.frame * DT_CTRL
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
-    if CS.cruiseState.enabled:
-      if not self.CP.pcmCruise:
-        for b in CS.buttonEvents:
-          if b.pressed:
-            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-              self.accel_pressed = True
-              self.accel_pressed_last = cur_time
-            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-              self.decel_pressed = True
-              self.decel_pressed_last = cur_time
-          else:
-            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-              self.accel_pressed = False
-            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-              self.decel_pressed = False
-
-        self.v_cruise_kph = update_v_cruise(self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995))), CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last,self.decel_pressed_last,self.fastMode)
-        self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
-
-        if self.accel_pressed or self.decel_pressed:
-          if self.v_cruise_kph_last != self.v_cruise_kph:
+    if not self.CP.pcmCruise:
+      for b in CS.buttonEvents:
+        if b.pressed:
+          if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+            self.accel_pressed = True
             self.accel_pressed_last = cur_time
+          elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+            self.decel_pressed = True
             self.decel_pressed_last = cur_time
-            self.fastMode = True
         else:
-          self.fastMode = False
-      elif self.CP.pcmCruise and not self.CP.pcmCruiseSpeed:
-        for b in CS.buttonEvents:
-          if b.pressed:
-            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-              self.accel_pressed = True
-              self.accel_pressed_last = cur_time
-            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-              self.decel_pressed = True
-              self.decel_pressed_last = cur_time
-          else:
-            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-              self.accel_pressed = False
-            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-              self.decel_pressed = False
+          if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+            self.accel_pressed = False
+          elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+            self.decel_pressed = False
 
-        self.v_cruise_kph = update_v_cruise_speed(self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995))), CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last,self.decel_pressed_last,self.fastMode)
-        self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
+      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995))), CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last,self.decel_pressed_last,self.fastMode)
+      self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
 
-        if self.accel_pressed or self.decel_pressed:
-          if self.v_cruise_kph_last != self.v_cruise_kph:
+      if self.accel_pressed or self.decel_pressed:
+        if self.v_cruise_kph_last != self.v_cruise_kph:
+          self.accel_pressed_last = cur_time
+          self.decel_pressed_last = cur_time
+          self.fastMode = True
+      else:
+        self.fastMode = False
+    elif self.CP.pcmCruise and not self.CP.pcmCruiseSpeed and CS.cruiseState.enabled:
+      for b in CS.buttonEvents:
+        if b.pressed:
+          if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+            self.accel_pressed = True
             self.accel_pressed_last = cur_time
+          elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+            self.decel_pressed = True
             self.decel_pressed_last = cur_time
-            self.fastMode = True
         else:
-          self.fastMode = False
-      elif self.CP.pcmCruise:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+          if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+            self.accel_pressed = False
+          elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+            self.decel_pressed = False
+
+      self.v_cruise_kph = update_v_cruise_speed(self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995))), CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last,self.decel_pressed_last,self.fastMode)
+      self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
+
+      if self.accel_pressed or self.decel_pressed:
+        if self.v_cruise_kph_last != self.v_cruise_kph:
+          self.accel_pressed_last = cur_time
+          self.decel_pressed_last = cur_time
+          self.fastMode = True
+      else:
+        self.fastMode = False
+    elif self.CP.pcmCruise and CS.cruiseState.enabled:
+      self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state

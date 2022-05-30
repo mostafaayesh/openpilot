@@ -52,7 +52,7 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
-      ret.pcmCruiseSpeed = False if (Params().get_bool("SpeedLimitControl") or Params().get_bool("TurnVisionControl") or Params().get_bool("TurnSpeedControl")) else True
+      ret.pcmCruiseSpeed = False if ((Params().get_bool("SpeedLimitControl") or Params().get_bool("TurnVisionControl") or Params().get_bool("TurnSpeedControl")) and not ret.openpilotLongitudinalControl) else True
     else:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
       ret.enableGasInterceptor = 0x201 in fingerprint[0]

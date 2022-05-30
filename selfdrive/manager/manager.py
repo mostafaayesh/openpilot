@@ -47,7 +47,7 @@ def manager_init():
     ("DisableOnroadUploads", "0"),
     ("DynamicLaneProfile", "2"),
     ("EndToEndToggle", "1"),
-    ("GapAdjustCruiseTr", "3"),
+    ("GapAdjustCruiseTr", "0"),
     ("GapAdjustCruise", "1"),
     ("GpxDeleteAfterUpload", "1"),
     ("GpxDeleteIfUploaded", "1"),
