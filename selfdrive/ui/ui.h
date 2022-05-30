@@ -115,7 +115,7 @@ typedef struct UIScene {
   int dynamic_lane_profile;
   bool gap_adjust_cruise;
   int gap_adjust_cruise_tr;
-  float gap_adjust_multiplier;
+  float gap_adjust_cruise_multiplier;
 
   bool read_params = false;
   int onroadScreenOff, onroadScreenOffBrightness, osoTimer, brightness, awake;
