@@ -82,7 +82,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
-      ("BRAKE_LIGHTS", "ACC_CONTROL", 0),
     ]
     checks += [
       ("EPB_STATUS", 50),
@@ -95,6 +94,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("CRUISE_SPEED", "ACC_HUD", 0),
         ("ACCEL_COMMAND", "ACC_CONTROL", 0),
         ("AEB_STATUS", "ACC_CONTROL", 0),
+        ("BRAKE_LIGHTS", "ACC_CONTROL", 0),
       ]
       if CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
         signals += [
@@ -102,10 +102,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ]
       checks += [
         ("ACC_HUD", 10),
+        ("ACC_CONTROL", 50),
       ]
-    checks += [
-      ("ACC_CONTROL", 50),
-    ]
   else:  # Nidec signals
     signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
@@ -116,9 +114,10 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       checks += [("CRUISE_PARAMS", 50)]
 
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.INSIGHT):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1),
-                ("LEAD_DISTANCE", "RADAR_HUD", 0)]
-    checks += [("RADAR_HUD", 50)]
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+    if not CP.openpilotLongitudinalControl:
+      signals += [("LEAD_DISTANCE", "RADAR_HUD", 0)]
+      checks += [("RADAR_HUD", 50)]
   elif CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID,  CAR.ACURA_RDX_3G, CAR.HONDA_E):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
     checks += [("RADAR_HUD", 50)]
@@ -204,7 +203,7 @@ class CarState(CarStateBase):
     self.prev_cruise_buttons = 0
     self.acc_active = False
     self.cruise_active = False
-    self.gap_adjust_cruise_tr = 3
+    self.gap_adjust_cruise_tr = 0
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -226,7 +225,8 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.INSIGHT):
       ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
-      self.lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
+      if not self.CP.openpilotLongitudinalControl:
+        self.lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
     elif self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID,  CAR.ACURA_RDX_3G, CAR.HONDA_E):
       ret.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN'])
@@ -288,7 +288,7 @@ class CarState(CarStateBase):
               self.gap_adjust_cruise_tr = 3
             Params().put("GapAdjustCruiseTr", str(self.gap_adjust_cruise_tr))
       else:
-        self.gap_adjust_cruise_tr = 3
+        self.gap_adjust_cruise_tr = 0
     ret.gapAdjustCruiseTr = self.gap_adjust_cruise_tr
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
@@ -355,7 +355,8 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.brakeLights = bool(ret.brakePressed or cp.vl["ACC_CONTROL"]['BRAKE_LIGHTS'] != 0 or ret.brake > 0.4)
+      ret.brakeLights = bool(ret.brakePressed or cp.vl["ACC_CONTROL"]['BRAKE_LIGHTS'] != 0 or ret.brake > 0.4) if not self.CP.openpilotLongitudinalControl else \
+                         bool(ret.brakePressed or ret.brake > 0.4)
     else:
       ret.brakeLights = bool(ret.brakePressed)
 
