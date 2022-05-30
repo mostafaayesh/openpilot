@@ -113,6 +113,8 @@ typedef struct UIScene {
   cereal::PandaState::PandaType pandaType;
 
   int dynamic_lane_profile;
+  bool gap_adjust_cruise;
+  int gap_adjust_cruise_tr;
 
   bool read_params = false;
   int onroadScreenOff, onroadScreenOffBrightness, osoTimer, brightness, awake;

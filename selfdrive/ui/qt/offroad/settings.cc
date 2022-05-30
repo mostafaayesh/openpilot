@@ -534,10 +534,16 @@ SunnypilotPanel::SunnypilotPanel(QWidget* parent) : QWidget(parent) {
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
 
-  toggles.append(new ParamControl("DisableMADS",
-                                  "Disable M.A.D.S.",
-                                  "Disable the beloved M.A.D.S. feature. Enable Stock openpilot engagement/disengagement.",
+  toggles.append(new ParamControl("EnableMADS",
+                                  "Enable M.A.D.S.",
+                                  "Enable the beloved M.A.D.S. feature. Disable toggle to revert back to stock openpilot engagement/disengagement.",
                                   "../assets/offroad/icon_openpilot.png",
+                                  this));
+
+  toggles.append(new ParamControl("GapAdjustCruise",
+                                  "Enable Gap Adjust Cruise*",
+                                  "Enable the Interval button on the steering wheel to adjust the cruise gap.\n*Only available to cars with openpilot Longitudinal Control*",
+                                  "../assets/offroad/icon_dynamic_gac.png",
                                   this));
 
   toggles.append(new ParamControl("StockResumeAlt",
@@ -595,6 +601,8 @@ SunnypilotPanel::SunnypilotPanel(QWidget* parent) : QWidget(parent) {
     toggle_layout->addWidget(toggle);
   }
 
+  toggle_layout->addWidget(horizontal_line());
+  toggle_layout->addWidget(new CameraOffset());
   toggle_layout->addWidget(horizontal_line());
   toggle_layout->addWidget(new AutoLaneChangeTimer());
   toggle_layout->addWidget(horizontal_line());

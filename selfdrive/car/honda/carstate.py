@@ -204,6 +204,7 @@ class CarState(CarStateBase):
     self.prev_cruise_buttons = 0
     self.acc_active = False
     self.cruise_active = False
+    self.gap_adjust_cruise_tr = 3
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -215,8 +216,10 @@ class CarState(CarStateBase):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
-    self.disable_mads = Params().get_bool("DisableMADS")
+    self.mads_enabled = Params().get_bool("EnableMADS")
     self.acc_mads_combo = Params().get_bool("ACCMADSCombo")
+    self.gap_adjust_cruise_tr = int(Params().get("GapAdjustCruiseTr"))
+    self.gap_adjust_cruise = Params().get_bool("GapAdjustCruise")
 
     # ******************* parse out can *******************
     # TODO: find wheels moving bit in dbc
@@ -276,6 +279,18 @@ class CarState(CarStateBase):
     self.leftBlinkerOn = cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"] != 0
     self.rightBlinkerOn = cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"] != 0
 
+    if self.CP.openpilotLongitudinalControl:
+      if self.gap_adjust_cruise:
+        if self.prev_cruise_setting != 3: # DISTANCE_ADJ
+          if self.cruise_setting == 3:
+            self.gap_adjust_cruise_tr -= 1
+            if self.gap_adjust_cruise_tr < 0:
+              self.gap_adjust_cruise_tr = 3
+            Params().put("GapAdjustCruiseTr", str(self.gap_adjust_cruise_tr))
+      else:
+        self.gap_adjust_cruise_tr = 3
+    ret.gapAdjustCruiseTr = self.gap_adjust_cruise_tr
+
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
                                   CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
       self.park_brake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
@@ -331,7 +346,7 @@ class CarState(CarStateBase):
     self.cruise_active = self.acc_active
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
-    if not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
+    if self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
@@ -352,7 +367,7 @@ class CarState(CarStateBase):
         elif self.prev_cruise_buttons == 4 and self.resumeAvailable == True: #resume
           if self.cruise_buttons != 4:
             self.accEnabled = True
-      if not self.disable_mads:
+      if self.mads_enabled:
         if self.prev_cruise_setting != 1: #1 == not LKAS button
           if self.cruise_setting == 1: #LKAS button rising edge
             self.lkasEnabled = not self.lkasEnabled
@@ -368,11 +383,11 @@ class CarState(CarStateBase):
       if self.prev_cruise_buttons != 2: #cancel
         if self.cruise_buttons == 2:
           self.accEnabled = False
-          if self.disable_mads:
+          if not self.mads_enabled:
             self.lkasEnabled = False
       if ret.brakePressed:
         self.accEnabled = False
-        if self.disable_mads:
+        if not self.mads_enabled:
           self.lkasEnabled = False
 
     if self.CP.pcmCruise and self.CP.minEnableSpeed > 0 or not self.CP.pcmCruiseSpeed:
@@ -383,7 +398,7 @@ class CarState(CarStateBase):
     if not self.CP.pcmCruise or not self.CP.pcmCruiseSpeed:
       ret.cruiseState.enabled = self.accEnabled
       if ret.cruiseState.enabled:
-        if self.disable_mads:
+        if not self.mads_enabled:
           self.lkasEnabled = True
 
     if ret.cruiseState.enabled == True:

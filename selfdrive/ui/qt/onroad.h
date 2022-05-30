@@ -18,8 +18,12 @@ public:
 
 private:
   QPushButton *dlpBtn;
+  QPushButton *gacBtn;
+  int prev_dynamic_lane_profile;
+  int prev_gap_adjust_cruise_tr;
 
   const QStringList dlpBtnColors = {"#007d00", "#c92231", "#7d007d"};
+  const QStringList gacBtnColors = {"#37b868", "#fcff4b", "#24a8bc", "#044389"};
 
 public slots:
   void updateState(const UIState &s);

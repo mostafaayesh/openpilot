@@ -239,6 +239,8 @@ static void update_status(UIState *s) {
       s->scene.debug_snapshot_enabled = Params().getBool("EnableDebugSnapshot");
       s->scene.dev_ui_enabled = std::stoi(Params().get("DevUI"));
       s->scene.speed_limit_value_offset = std::stoi(Params().get("SpeedLimitValueOffset"));
+      s->scene.gap_adjust_cruise = Params().getBool("GapAdjustCruise");
+      s->scene.gap_adjust_cruise_tr = std::stoi(Params().get("GapAdjustCruiseTr"));
     }
     // Invisible until we receive a calibration message.
     s->scene.world_objects_visible = false;

@@ -289,7 +289,7 @@ class CarController():
       if not CS.out.cruiseState.standstill and (enabled and CS.acc_active):
         cruise_button = self.get_cruise_buttons(CS)
         if cruise_button is not None:
-          can_sends.append(hondacan.spam_buttons_command(self.packer, cruise_button, (self.resume_count) // 2, CS.CP.carFingerprint))
+          can_sends.append(hondacan.spam_buttons_command(self.packer, cruise_button, (frame + self.resume_count) // 2, CS.CP.carFingerprint))
           self.resume_count += 1
         else:
           self.resume_count = 0
@@ -349,12 +349,13 @@ class CarController():
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame//10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, CS.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, CS.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud, CS.gap_adjust_cruise_tr))
 
     return can_sends
 
   def get_speed_limit_osm(self):
     is_metric = Params().get_bool("IsMetric")
+    self.sm.update(0)
     speed_limit_osm = float(self.sm['longitudinalPlan'].speedLimit if self.sm['longitudinalPlan'].speedLimit is not None else 0.0) * (CV.MS_TO_MPH if not is_metric else CV.MS_TO_KPH)
     return speed_limit_osm
 
@@ -363,12 +364,14 @@ class CarController():
     speed_limit_value_offset = int(Params().get("SpeedLimitValueOffset"))
     is_metric = Params().get_bool("IsMetric")
     if speed_limit_perc_offset:
+      self.sm.update(0)
       speed_limit_offset = float(self.sm['longitudinalPlan'].speedLimitOffset) * (CV.MS_TO_MPH if not is_metric else CV.MS_TO_KPH)
     else:
       speed_limit_offset = float(speed_limit_value_offset)
     return speed_limit_offset
 
   def get_slc_state(self):
+    self.sm.update(0)
     self.slc_state = self.sm['longitudinalPlan'].speedLimitControlState
     return self.slc_state
 
@@ -387,9 +390,12 @@ class CarController():
     speed_limit_value_offset = int(Params().get("SpeedLimitValueOffset"))
     is_metric = Params().get_bool("IsMetric")
     v_cruise_kph = v_cruise_kph_prev
+    self.sm.update(0)
     if Params().get_bool("SpeedLimitControl") and (float(self.sm['longitudinalPlan'].speedLimit if self.sm['longitudinalPlan'].speedLimit is not None else 0.0) != 0.0):
+      self.sm.update(0)
       target_v_cruise_kph = float(self.sm['longitudinalPlan'].speedLimit if self.sm['longitudinalPlan'].speedLimit is not None else 0.0) * CV.MS_TO_KPH
       if speed_limit_perc_offset:
+        self.sm.update(0)
         v_cruise_kph = target_v_cruise_kph + float(float(self.sm['longitudinalPlan'].speedLimitOffset) * CV.MS_TO_KPH)
       else:
         v_cruise_kph = target_v_cruise_kph + (float(speed_limit_value_offset * CV.MPH_TO_KPH) if not is_metric else speed_limit_value_offset)
@@ -455,24 +461,27 @@ class CarController():
   def get_curve_speed(self, target_speed_kph):
     v_cruise_kph_prev = self.sm['controlsState'].vCruise
     if Params().get_bool("TurnVisionControl"):
+      self.sm.update(0)
       vision_v_cruise_kph = float(float(self.sm['longitudinalPlan'].visionTurnSpeed) * CV.MS_TO_KPH)
       if int(vision_v_cruise_kph) == int(v_cruise_kph_prev):
-        vision_v_cruise_kph = 160
+        vision_v_cruise_kph = 255
       vision_v_cruise_kph = min(target_speed_kph, vision_v_cruise_kph)
     else:
-      vision_v_cruise_kph = 160
+      vision_v_cruise_kph = 255
     if Params().get_bool("TurnSpeedControl"):
+      self.sm.update(0)
       map_v_cruise_kph = float(float(self.sm['longitudinalPlan'].turnSpeed) * CV.MS_TO_KPH)
       if int(map_v_cruise_kph) == 0.0:
-        map_v_cruise_kph = 160
+        map_v_cruise_kph = 255
       map_v_cruise_kph = min(target_speed_kph, map_v_cruise_kph)
     else:
-      map_v_cruise_kph = 160
+      map_v_cruise_kph = 255
     print('vision_v_cruise_kph={}  map_v_cruise_kph={}'.format(vision_v_cruise_kph, map_v_cruise_kph))
     return min(target_speed_kph, vision_v_cruise_kph, map_v_cruise_kph)
 
   def get_button_control(self, CS, final_speed):
     is_metric = Params().get_bool("IsMetric")
+    self.sm.update(0)
     v_cruise_kph_max = self.sm['controlsState'].vCruise
     self.init_speed = round(min(final_speed, v_cruise_kph_max) * CV.KPH_TO_MPH) if not is_metric else round(min(final_speed, v_cruise_kph_max))
     self.v_set_dis = round(CS.out.cruiseState.speed * CV.MS_TO_MPH) if not is_metric else round(CS.out.cruiseState.speed * CV.MS_TO_KPH)
@@ -484,6 +493,7 @@ class CarController():
     if not self.get_cruise_buttons_status(CS):
       pass
     elif CS.cruise_active:
+      self.sm.update(0)
       v_cruise_kph_prev = self.sm['controlsState'].vCruise
       set_speed_kph = self.get_target_speed(v_cruise_kph_prev)
       if Params().get_bool("SpeedLimitControl"):

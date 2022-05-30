@@ -1,16 +1,4 @@
-sunnypilot - Version 0.8.12-4 (2022-05-04)
-========================
-* HOTFIX🛠: Reduce UI lag and improve model performance
-
-sunnypilot - Version 0.8.12-4 (2022-05-01)
-========================
-* HOTFIX🛠: Fix stock ACC canceling bug if no active internet connection
-
-sunnypilot - Version 0.8.12-4 (2022-04-18)
-========================
-* HOTFIX🛠: Fix internet check hanging after boot
-
-sunnypilot - Version 0.8.12-4 (2022-04-18)
+sunnypilot - Version 0.8.12-4 (2022-03-XX)
 ========================
 * HOTFIX🛠: Add filter to ACC_HUD signal
 
@@ -20,6 +8,7 @@ sunnypilot - Version 0.8.12-4 (2022-04-09)
   * Speed Limit Control
   * Vision-based Turn Control
   * Map-based Turn Control
+* NEW❗: HDA status integration with Custom Stock Longitudinal Control on applicable HKG cars only
 * NEW❗: Roll Compensation and SteerRatio fix from comma's 0.8.13
 * NEW❗: Dev UI to display different metrics on screen
   * Click on the "MAX" box on the top left of the openpilot display to toggle different metrics display
