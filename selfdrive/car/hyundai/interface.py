@@ -60,7 +60,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
       tire_stiffness_factor = 0.82
       if Params().get_bool('Torque'):
-        max_torque = 3.1
+        MAX_LAT_ACCEL = 3.1
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -80,7 +80,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -99,7 +99,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.804
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        MAX_LAT_ACCEL = 2.0
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -119,7 +119,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -149,7 +149,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -169,7 +169,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -205,7 +205,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -225,7 +225,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.73  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.97
+        MAX_LAT_ACCEL = 2.97
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -262,7 +262,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75 * 1.15
       tire_stiffness_factor = 0.5
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -291,7 +291,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -311,7 +311,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9 if CAR.KIA_NIRO_HEV_2021 else 13.73  # Spec
       tire_stiffness_factor = 0.385
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -348,7 +348,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
       if Params().get_bool('Torque'):
-        max_torque = 2.5
+        MAX_LAT_ACCEL = 2.5
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -367,7 +367,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        MAX_LAT_ACCEL = 2.0
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -398,25 +398,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    
-    elif candidate == CAR.KIA_K5_2021:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3228. * CV.LB_TO_KG
-      ret.wheelbase = 2.85
-      ret.steerRatio = 13.27  # 2021 Kia K5 Steering Ratio (all trims)
-      tire_stiffness_factor = 0.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.KIA_EV6:
-      ret.mass = 2055 + STD_CARGO_KG
-      ret.wheelbase = 2.9
-      ret.steerRatio = 16.
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
-      tire_stiffness_factor = 0.65
-
-      max_lat_accel = 2.
-      set_torque_tune(ret.lateralTuning, max_lat_accel, 0.01)
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
@@ -448,7 +429,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        MAX_LAT_ACCEL = 2.0
         friction = 0.05
 
         ret.lateralTuning.init('torque')
@@ -466,7 +447,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
       if Params().get_bool('Torque'):
-        max_torque = 2.0
+        MAX_LAT_ACCEL = 2.0
         friction = 0.05
 
         ret.lateralTuning.init('torque')
