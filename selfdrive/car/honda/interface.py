@@ -89,10 +89,9 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 8000], [0, 2560, 3840]]
       if eps_modified:
         if Params().get_bool('Torque'):
-          max_torque = 1.7
+          MAX_LAT_ACCEL = 1.7
           friction = 0.087112
 
           ret.lateralTuning.init('torque')
@@ -102,6 +101,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
           ret.lateralTuning.torque.friction = friction
         else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 8000], [0, 2560, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
@@ -114,11 +114,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2564, 8000], [0, 2564, 3840]]
       if eps_modified:
         if Params().get_bool('Torque'):
-          max_torque = 2.0
-          friction = 0.04 #prickle said this is pretty good
+          MAX_LAT_ACCEL = 2.0 if eps_modified else 1.0
+          friction = 0.04 if eps_modified else 0.1
 
           ret.lateralTuning.init('torque')
           ret.lateralTuning.torque.useSteeringAngle = True
@@ -127,6 +126,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
           ret.lateralTuning.torque.friction = friction
         else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2564, 8000], [0, 2564, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.36], [0.108]] #minus 10% from 0.4, 0.12
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
@@ -141,9 +141,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.33  # 11.82 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       if Params().get_bool('Torque'):
-        max_torque = 1.7
-        friction = 0.087112
-
+        MAX_LAT_ACCEL = 2.0 if eps_modified else 1.0
+        friction = 0.05 if eps_modified else 0.1
+        
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
@@ -185,10 +185,9 @@ class CarInterface(CarInterfaceBase):
         # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
         # modified request output values: 0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x1ACD, 0x239A, 0x2800
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 10000], [0, 2560, 3840]]
         # Use LQR tune if param is set
         if Params().get_bool('Torque'):
-          max_torque = 3.3
+          MAX_LAT_ACCEL = 3.3
           friction = 0.046
 
           ret.lateralTuning.init('torque')
@@ -198,6 +197,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
           ret.lateralTuning.torque.friction = friction
         else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 10000], [0, 2560, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.07]]
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
@@ -266,8 +266,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.0 #11.95 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       if Params().get_bool('Torque'):
-        max_torque = 1.7
-        friction = 0.087112
+        MAX_LAT_ACCEL = 1.0
+        friction = 0.1
 
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
