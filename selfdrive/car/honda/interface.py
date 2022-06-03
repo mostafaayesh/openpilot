@@ -7,12 +7,15 @@ from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, Honda
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
-
+try:
+  from custom_tune import TUNE_TORQUE, MAX_TORQUE, FRICTION, lateralParams_torqueBP, lateralParams_torqueV, lateralTuning_pid_kpV, lateralTuning_pid_kiV
+  CUSTOM_TUNE = True
+except ImportError:
+  CUSTOM_TUNE = False
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
-
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -330,6 +333,18 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
     ret.steerLimitTimer = 0.8
+
+    if CUSTOM_TUNE:
+      if TUNE_TORQUE:
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / MAX_TORQUE
+        ret.lateralTuning.torque.kf = 1.0 / MAX_TORQUE
+        ret.lateralTuning.torque.ki = 0.5 / MAX_TORQUE
+        ret.lateralTuning.torque.friction = FRICTION
+      else:
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [lateralParams_torqueBP, lateralParams_torqueV]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [lateralTuning_pid_kpV, lateralTuning_pid_kiV]
 
     return ret
 
