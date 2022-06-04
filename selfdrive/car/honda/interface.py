@@ -9,7 +9,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 try:
-  from custom_tune import TUNE_TORQUE, MAX_LAT_ACCEL, FRICTION, lateralParams_torqueBP, lateralParams_torqueV, lateralTuning_pid_kpV, lateralTuning_pid_kiV
+  from custom_tune import TUNE_TORQUE, MAX_LAT_ACCEL, FRICTION, lateralParams_torqueBP, lateralParams_torqueV, lateralTuning_pid_kpV, lateralTuning_pid_kiV, lateralTuning_pid_kf
   CUSTOM_TUNE = True
 except ImportError:
   CUSTOM_TUNE = False
@@ -341,6 +341,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [lateralParams_torqueBP, lateralParams_torqueV]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [lateralTuning_pid_kpV, lateralTuning_pid_kiV]
+        ret.lateralTuning.pid.kf = lateralTuning_pid_kf
 
     return ret
 
