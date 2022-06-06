@@ -89,23 +89,23 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      if eps_modified:
-        if Params().get_bool('Torque'):
-          MAX_LAT_ACCEL = 1.7
-          friction = 0.087112
+      if Params().get_bool('Torque'):
+        MAX_LAT_ACCEL = 1.7
+        friction = 0.087112
 
-          ret.lateralTuning.init('torque')
-          ret.lateralTuning.torque.useSteeringAngle = True
-          ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.friction = friction
-        else:
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.friction = friction
+      else:
+        if eps_modified:
           ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 8000], [0, 2560, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
-      else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
+        else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
+          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
       tire_stiffness_factor = 1.
 
     elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL):
@@ -114,23 +114,23 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      if eps_modified:
-        if Params().get_bool('Torque'):
-          MAX_LAT_ACCEL = 2.0 if eps_modified else 1.0
-          friction = 0.04 if eps_modified else 0.1
+      if Params().get_bool('Torque'):
+        MAX_LAT_ACCEL = 2.0 if eps_modified else 1.0
+        friction = 0.04 if eps_modified else 0.1
 
-          ret.lateralTuning.init('torque')
-          ret.lateralTuning.torque.useSteeringAngle = True
-          ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.friction = friction
-        else:
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.friction = friction
+      else:
+        if eps_modified:
           ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2564, 8000], [0, 2564, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.36], [0.108]] #minus 10% from 0.4, 0.12
-      else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+        else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       tire_stiffness_factor = 1.
 
     elif candidate in (CAR.ACCORD, CAR.ACCORDH):
@@ -181,27 +181,23 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0  # 12.3 is spec end-to-end
-      if eps_modified:
-        # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
-        # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
-        # modified request output values: 0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x1ACD, 0x239A, 0x2800
-        # Use LQR tune if param is set
-        if Params().get_bool('Torque'):
-          MAX_LAT_ACCEL = 3.3
-          friction = 0.046
+      if Params().get_bool('Torque'):
+        MAX_LAT_ACCEL = 3.3 if eps_modified else 1.0
+        friction = 0.046 if eps_modified else 0.1
 
-          ret.lateralTuning.init('torque')
-          ret.lateralTuning.torque.useSteeringAngle = True
-          ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
-          ret.lateralTuning.torque.friction = friction
-        else:
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.ki = 0.5 / MAX_LAT_ACCEL
+        ret.lateralTuning.torque.friction = friction
+      else:
+        if eps_modified:
           ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 10000], [0, 2560, 3840]]
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.07]]
-      else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
+        else:
+          ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
+          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
       tire_stiffness_factor = 0.677
       ret.wheelSpeedFactor = 1.025
 
