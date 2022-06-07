@@ -23,16 +23,42 @@
 
 import threading
 import time
+
+import cereal.messaging as messaging
+from common.realtime import Ratekeeper
+
+from selfdrive.dashcamd.dashcamd import Dashcamd
 from selfdrive.gpxd.gpx_uploader import gpx_uploader_thread
 
+HERTZ = 1
+
 def confd_thread():
+  sm = messaging.SubMaster(['deviceState'])
+
+  frame = 0
+  started = False
+  free_space = 1
+  dashcamd = Dashcamd()
+
+  rk = Ratekeeper(HERTZ, print_delay_threshold=None)  # Keeps rate at 2 hz
   uploader_thread = None
 
   while True:
     if uploader_thread is None:
       uploader_thread = threading.Thread(target=gpx_uploader_thread)
       uploader_thread.start()
-    time.sleep(0.01)
+
+    if frame % (HERTZ * 3) == 0:
+      sm.update(0)
+      if sm.updated['deviceState']:
+        started = sm['deviceState'].started
+        free_space = sm['deviceState'].freeSpacePercent
+    
+    if frame % HERTZ == 0:
+      dashcamd.run(started, free_space)
+    
+    frame += 1
+    rk.keep_time()
 
 def main():
   confd_thread()
