@@ -195,6 +195,7 @@ def gen_long_ocp():
 class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
+    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.desired_TF = T_FOLLOW
     self.traffic_multiplier = 0.85
     params = Params()
