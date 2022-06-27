@@ -344,10 +344,12 @@ class LongitudinalMpc:
 
   def update_TF(self, carstate):
     if carstate.distanceLines == 1: # Traffic
+      self.desired_TF = 1.0
+    elif carstate.distanceLines == 2: # Traffic Relaxed
       self.desired_TF = 1.2
-    elif carstate.distanceLines == 2: # Relaxed
+    elif carstate.distanceLines == 3: # Stock
       self.desired_TF = 1.45
-    else:
+    else: # Relaxed
       self.desired_TF = 1.8
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
