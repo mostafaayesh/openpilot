@@ -6,7 +6,7 @@ from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, CruiseSetting
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -177,6 +177,10 @@ class CarState(CarStateBase):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
+    # Default follow distance 4 bars
+    self.trMode = 3
+    self.read_distance_lines = 4
+
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
@@ -285,6 +289,13 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
     main_on = cp.vl[self.main_on_sig_msg]["MAIN_ON"]
     ret.cruiseState.available = bool(main_on)
+
+    # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
+    if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
+      if self.cruise_setting == 0:
+        self.trMode = (self.trMode - 1) % 4
+    self.read_distance_lines = self.trMode + 1
+    ret.distanceLines = self.read_distance_lines
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
