@@ -124,7 +124,7 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
         'HUD_LEAD': hud.car,
-        'HUD_DISTANCE_3': hud.car,
+        'HUD_DISTANCE_3': 1 if hud.car != 0 else 0,
         'HUD_DISTANCE': hud.dist_lines,
         'IMPERIAL_UNIT': int(not is_metric),
         'SET_ME_X01_2': 1,
