@@ -229,7 +229,8 @@ class LongitudinalMpc:
     self.set_weights()
 
   def set_weights(self, prev_accel_constraint=True):
-    if self.e2e:
+    if False:
+      # unused in e2e_long
       self.set_weights_for_xva_policy()
       self.params[:,0] = -10.
       self.params[:,1] = 10.
@@ -249,23 +250,41 @@ class LongitudinalMpc:
   def set_weights_for_lead_policy(self, prev_accel_constraint=True):
     a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
     cost_mulitpliers = self.get_cost_multipliers()
-    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST,
+    if self.e2e:
+      a_change_cost = .1 if prev_accel_constraint else 0
+      W = np.asfortranarray(np.diag([
+          0., 
+          .2, 
+          0.25, 
+          1., 
+          0., 
+          1.,
+        ]))
+    else:
+      W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST,
                                    A_EGO_COST, a_change_cost * cost_mulitpliers[0],
                                    J_EGO_COST * cost_mulitpliers[1]]))
     for i in range(N):
-      W[4,4] = a_change_cost * cost_mulitpliers[0] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      if self.e2e:
+        W[4,4] = a_change_cost * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      else:
+        W[4,4] = a_change_cost * cost_mulitpliers[0] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST * cost_mulitpliers[2]])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 10. if self.e2e else DANGER_ZONE_COST * cost_mulitpliers[2]])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights_for_xva_policy(self):
-    W = np.asfortranarray(np.diag([0., 10., 1., 10., 0.0, 1.]))
+    if self.e2e:
+      W = np.asfortranarray(np.diag([0., 0.2, 0.25, 1., 0.0, .1]))
+    else:
+      W = np.asfortranarray(np.diag([0., 10., 1., 10., 0.0, 1.]))
+
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
@@ -334,8 +353,14 @@ class LongitudinalMpc:
     else: # Long
       self.desired_TF = 1.85
 
-  def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
+  def update(self, carstate, radarstate, v_cruise, x, v, a, prev_accel_constraint):
     v_ego = self.x0[1]
+    xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+    x = np.cumsum(np.insert(xforward, 0, x[0]))
+    if self.e2e:
+      self.yref[:,1] = x
+      self.yref[:,2] = v
+      self.yref[:,3] = a
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -346,6 +371,8 @@ class LongitudinalMpc:
 
     # set accel limits in params
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
+    if self.e2e:
+        self.params[:,0] = self.cruise_min_a
     self.params[:,1] = self.cruise_max_a
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
@@ -354,18 +381,31 @@ class LongitudinalMpc:
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.desired_TF)
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.desired_TF)
 
-    # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
-    # when the leads are no factor.
-    v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
-    v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
-    v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               v_lower,
-                               v_upper)
-    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.desired_TF)
+    if self.e2e:
+      cruise_target = T_IDXS * v_cruise + x[0]
+      x_targets = np.column_stack([x,
+                                  lead_0_obstacle - (3/4) * get_safe_obstacle_distance(v),
+                                  lead_1_obstacle - (3/4) * get_safe_obstacle_distance(v),
+                                  cruise_target])
+      self.params[:,2] = 1e3
 
-    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-    self.source = SOURCES[np.argmin(x_obstacles[0])]
-    self.params[:,2] = np.min(x_obstacles, axis=1)
+      self.yref[:,1] = np.min(x_targets, axis=1)
+      for i in range(N):
+        self.solver.set(i, "yref", self.yref[i])
+      self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    else:
+      # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
+      # when the leads are no factor.
+      v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
+      v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
+      v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
+                                v_lower,
+                                v_upper)
+      cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.desired_TF)
+
+      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+      self.source = SOURCES[np.argmin(x_obstacles[0])]
+      self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
     self.params[:,4] = self.desired_TF
 
