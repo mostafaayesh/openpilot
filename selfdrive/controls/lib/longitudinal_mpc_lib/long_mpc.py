@@ -329,8 +329,10 @@ class LongitudinalMpc:
       self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
     elif carstate.distanceLines == 2: # Relaxed
       self.desired_TF = 1.25
-    else:
+    elif carstate.distanceLines == 3: # Stock
       self.desired_TF = T_FOLLOW
+    else: # Long
+      self.desired_TF = 1.85
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
     v_ego = self.x0[1]
