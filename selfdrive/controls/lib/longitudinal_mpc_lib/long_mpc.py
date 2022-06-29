@@ -258,24 +258,21 @@ class LongitudinalMpc:
           0.25, 
           1., 
           0., 
-          1.,
+          1. * cost_mulitpliers[1],
         ]))
     else:
       W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST,
                                    A_EGO_COST, a_change_cost * cost_mulitpliers[0],
                                    J_EGO_COST * cost_mulitpliers[1]]))
     for i in range(N):
-      if self.e2e:
-        W[4,4] = a_change_cost * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
-      else:
-        W[4,4] = a_change_cost * cost_mulitpliers[0] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      W[4,4] = a_change_cost * cost_mulitpliers[0] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 10. if self.e2e else DANGER_ZONE_COST * cost_mulitpliers[2]])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 10. * cost_mulitpliers[2] if self.e2e else DANGER_ZONE_COST * cost_mulitpliers[2]])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
@@ -384,8 +381,8 @@ class LongitudinalMpc:
     if self.e2e:
       cruise_target = T_IDXS * v_cruise + x[0]
       x_targets = np.column_stack([x,
-                                  lead_0_obstacle - (3/4) * get_safe_obstacle_distance(v),
-                                  lead_1_obstacle - (3/4) * get_safe_obstacle_distance(v),
+                                  lead_0_obstacle - (3/4) * get_safe_obstacle_distance(v, self.desired_TF),
+                                  lead_1_obstacle - (3/4) * get_safe_obstacle_distance(v, self.desired_TF),
                                   cruise_target])
       self.params[:,2] = 1e3
 
