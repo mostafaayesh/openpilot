@@ -333,8 +333,8 @@ class LongitudinalMpc():
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
-    self.cruise_min_a = -3.2
-    self.cruise_max_a = 3.2
+    self.cruise_min_a = min_a
+    self.cruise_max_a = max_a
 
   def update_TF(self, carstate):
     gap_adjust_cruise = Params().get_bool("GapAdjustCruise")
