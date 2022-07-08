@@ -519,7 +519,7 @@ class CarInterface(CarInterfaceBase):
 
     can_sends = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                                c.actuators,
-                               c.cruiseControl.cancel,
+                               c.cruiseControl.cancel if not self.CP.enableGasInterceptor else False,
                                hud_v_cruise,
                                c.hudControl.lanesVisible,
                                hud_show_car=c.hudControl.leadVisible,
