@@ -126,11 +126,11 @@ class Uploader():
 
     for name, key, fn in upload_files:
       if any(f in fn for f in self.immediate_folders):
-        return (key, fn)
+        return (name, key, fn)
 
     for name, key, fn in upload_files:
       if name in self.immediate_priority:
-        return (key, fn)
+        return (name, key, fn)
 
     if with_raw:
       # then upload the full log files, rear and front camera files
@@ -293,7 +293,7 @@ def uploader_fn(exit_event):
         time.sleep(60 if offroad else 5)
       continue
 
-    key, fn = d
+    name, key, fn = d
 
     cloudlog.debug("upload %r over %s", d, network_type)
     success = uploader.upload(key, fn)
