@@ -111,8 +111,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': 1,
-      'HUD_DISTANCE_3': hud.lead_visible,
-      'HUD_DISTANCE': hud.dist_lines,  # max distance setting on display
+      'HUD_DISTANCE': hud.dist_lines,
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
       'SET_ME_X01_2': 1,
@@ -130,6 +129,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud
       acc_hud_values['FCM_OFF_2'] = stock_hud['FCM_OFF_2']
       acc_hud_values['FCM_PROBLEM'] = stock_hud['FCM_PROBLEM']
       acc_hud_values['ICONS'] = stock_hud['ICONS']
+      acc_hud_values['ACC_ON'] = hud.lead_visible
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values))
 
   lkas_hud_values = {
