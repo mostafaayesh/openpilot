@@ -204,6 +204,7 @@ class LongitudinalMpc:
     self.e2e = e2e
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.desired_TF = T_FOLLOW
+    self.traffic_multiplier = 0.8
     self.reset()
     self.source = SOURCES[2]
 
@@ -346,11 +347,14 @@ class LongitudinalMpc:
       # in mph ~= 5     10   15   20  25     30    35     40  45     50    55     60  65     70    75     80  85     90
       x_vel = [0, 2.25, 4.5, 6.75, 9, 11.25, 13.5, 15.75, 18, 20.25, 22.5, 24.75, 27, 29.25, 31.5, 33.75, 36, 38.25, 40.5]
       y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05]
-      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
+      y_dist_adjusted = [dist * self.traffic_multiplier for dist in y_dist]
+      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist_adjusted)
     elif carstate.distanceLines == 2: # Relaxed
       self.desired_TF = 1.25
-    else:
+    elif carstate.distanceLines == 3: # Stock openpilot
       self.desired_TF = T_FOLLOW
+    else: # Long
+      self.desired_TF = 1.95 
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
     v_ego = self.x0[1]
