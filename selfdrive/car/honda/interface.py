@@ -87,7 +87,7 @@ class CarInterface(CarInterfaceBase):
     eps_modified = False
     eps_emodified = False
     for fw in car_fw:
-      if fw.ecu == "eps" and "-" not in fw.fwVersion:
+      if fw.ecu == "eps" and b"," in fw.fwVersion and b"-" not in fw.fwVersion:
         eps_emodified = True
       elif fw.ecu == "eps" and b"," in fw.fwVersion:
         eps_modified = True
