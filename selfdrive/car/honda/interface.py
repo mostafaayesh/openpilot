@@ -101,7 +101,7 @@ class CarInterface(CarInterfaceBase):
       if eps_emodified:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1761, 3226, 4096, 4352, 4608, 9898, 15189, 20480], [0, 512, 1024, 1536, 2048, 2560, 3072, 3584, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
-        ret.lateralTuning.pid.kf = 0.000015
+        ret.lateralTuning.pid.kf = 0.000005
       elif eps_modified:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
