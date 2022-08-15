@@ -53,8 +53,8 @@ procs = [
   # PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
   # PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
-  # NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
-  # PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
+  PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),
 
   # EON only
   PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
