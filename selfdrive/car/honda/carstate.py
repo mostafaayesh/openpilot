@@ -150,9 +150,9 @@ class CarState(CarStateBase):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
-    # Default follow distance 4 bars
-    self.trMode = 3
-    self.read_distance_lines = 4
+    # Default follow distance 1 bar
+    self.trMode = 0
+    self.read_distance_lines = 1
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
