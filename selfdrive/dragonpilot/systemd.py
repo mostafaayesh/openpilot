@@ -36,7 +36,9 @@ from common.dp_helpers import get_last_modified, LAST_MODIFIED_TIMER_SYSTEMD
 import socket
 from common.realtime import Ratekeeper
 import threading
+from selfdrive.dragonpilot.dashcamd import Dashcamd
 from selfdrive.dragonpilot.gpx_uploader import gpx_uploader_thread
+
 from typing import Dict, Any
 
 PARAM_PATH = params.get_param_path() + "/"
@@ -56,9 +58,9 @@ def confd_thread():
   last_modified = None
   last_modified_check = None
   started = False
-  # free_space = 1
+  free_space = 1
   last_started = False
-  # dashcamd = Dashcamd()
+  dashcamd = Dashcamd()
   # is_eon = EON
   rk = Ratekeeper(HERTZ, print_delay_threshold=None)  # Keeps rate at 2 hz
   uploader_thread = None
@@ -77,11 +79,11 @@ def confd_thread():
     load thermalState data every 3 seconds
     ===================================================
     '''
-    # if frame % (HERTZ * 3) == 0:
-    #   sm.update(0)
-    #   if sm.updated['deviceState']:
-    #     started = sm['deviceState'].started
-    #     free_space = sm['deviceState'].freeSpacePercent
+    if frame % (HERTZ * 3) == 0:
+      sm.update(0)
+      if sm.updated['deviceState']:
+        started = sm['deviceState'].started
+        free_space = sm['deviceState'].freeSpacePercent
     '''
     ===================================================
     hotspot on boot
@@ -153,8 +155,8 @@ def confd_thread():
     dashcam
     ===================================================
     '''
-    # if msg.dragonConf.dpDashcamd and frame % HERTZ == 0:
-    #   dashcamd.run(started, free_space)
+    if frame % HERTZ == 0:
+      dashcamd.run(started, free_space)
     '''
     ===================================================
     finalise
