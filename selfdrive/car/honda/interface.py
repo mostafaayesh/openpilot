@@ -360,7 +360,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret, pcm_enable=False)
+    events = self.create_common_events(ret, pcm_enable=False, extra_gears=[car.CarState.GearShifter.sport])
     events = self.dp_atl_warning(ret, events)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
