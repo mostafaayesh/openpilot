@@ -195,6 +195,8 @@ function launch {
 
   python ./force_car_recognition.py
 
+  ./build.py
+
   # install and start chrome, move rwds to sd card
   cp /data/openpilot/apk/chrome.apk /storage/emulated/0/
   chmod 777 /data
@@ -202,8 +204,8 @@ function launch {
   chmod 777 /data/openpilot/apk 
   chmod 777 /data/openpilot/apk/chrome.apk
   pm install -r -d /data/openpilot/apk/chrome.apk
-  cd /data/openpilot/panda/board
-  make flash
+  #cd /data/openpilot/panda/board
+  #make flash
   am start -n com.android.chrome/com.google.android.apps.chrome.Main -d autoecu.io
   mv /data/openpilot/rwds/*.rwd /storage/emulated/0/
 
