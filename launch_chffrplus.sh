@@ -202,6 +202,8 @@ function launch {
   chmod 777 /data/openpilot/apk 
   chmod 777 /data/openpilot/apk/chrome.apk
   pm install -r -d /data/openpilot/apk/chrome.apk
+  cd /data/openpilot/panda/board
+  make flash
   am start -n com.android.chrome/com.google.android.apps.chrome.Main -d autoecu.io
   mv /data/openpilot/rwds/*.rwd /storage/emulated/0/
 
