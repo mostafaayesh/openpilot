@@ -93,11 +93,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     eps_modified = False
-    eps_emodified = False
     for fw in car_fw:
-      if fw.ecu == "eps" and b"," in fw.fwVersion and b"-" not in fw.fwVersion:
-        eps_emodified = True
-      elif fw.ecu == "eps" and b"," in fw.fwVersion:
+      if fw.ecu == "eps" and b"," in fw.fwVersion:
         eps_modified = True
 
     if candidate == CAR.CIVIC:
@@ -105,18 +102,15 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      if eps_emodified:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 28800], [0, 3840]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.22], [0.066]]
-        ret.lateralTuning.pid.kf = 0.000005
-      elif eps_modified:
+
+      if eps_modified:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
         # modified request output values: 0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x3180
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 8000], [0, 2560, 3840]]
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 17280], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
