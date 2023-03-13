@@ -6,12 +6,8 @@ from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.honda.hondacan import get_pt_bus
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS, CruiseSetting
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
 from selfdrive.car.interfaces import CarStateBase
-
-from common.params import put_nonblocking
-import time
-from math import floor
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -160,10 +156,6 @@ class CarState(CarStateBase):
     self.v_cruise_pcm_prev = 0
     self.engineRPM = 0
 
-    # Default follow distance 3 bars
-    self.trMode = 2
-    self.read_distance_lines = 3
-
     # When available we use cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] to populate vEgoCluster
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
@@ -287,15 +279,6 @@ class CarState(CarStateBase):
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
-
-    # When user presses distance button on steering wheel. Must be above LKAS button code, cannot be below! (credit: @aragon7777)
-    if self.prev_cruise_setting == CruiseSetting.DISTANCE_ADJ:
-      if self.cruise_setting == 0:
-        self.trMode = (self.trMode - 1) % 3
-    self.read_distance_lines = self.trMode + 1
-    ret.distanceLines = self.read_distance_lines
-    put_nonblocking('dp_following_profile', str(int(max(self.read_distance_lines - 1, 0)))) # Skipping one profile toyota mid is weird.
-    put_nonblocking('dp_last_modified',str(floor(time.time())))
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
