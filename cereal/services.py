@@ -30,7 +30,7 @@ services = {
   "temperatureSensor": (True, 100., 100),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
-  "can": (True, 100.),
+  "can": (True, 100., 1223),  # decimation gives ~5 msgs in a full segment
   "controlsState": (True, 100., 10),
   "pandaStates": (True, 2., 1),
   "peripheralState": (True, 2., 1),
@@ -62,11 +62,10 @@ services = {
   "carEvents": (True, 1., 1),
   "carParams": (True, 0.02, 1),
   "roadCameraState": (True, 20., 20),
-  "driverCameraState": (True, 10., 10),
-  "driverEncodeIdx": (False, 10., 1),
+  # "driverCameraState": (True, 20., 20),
+  # "driverEncodeIdx": (False, 20., 1),
   "driverStateV2": (True, 20., 10),
-  "driverState": (True, 10, 5),
-  "driverMonitoringState": (True, 10., 5),
+  # "driverMonitoringState": (True, 20., 10),
   "wideRoadEncodeIdx": (False, 20., 1),
   "wideRoadCameraState": (True, 20., 20),
   "modelV2": (True, 20., 40),
@@ -77,6 +76,7 @@ services = {
   "navThumbnail": (True, 0.),
   "navModel": (True, 2., 4.),
   "mapRenderState": (True, 2., 1.),
+  "uiPlan": (True, 20., 40.),
   "qRoadEncodeIdx": (False, 20.),
   "userFlag": (True, 0., 1),
   "microphone": (True, 10., 10),
@@ -90,9 +90,16 @@ services = {
   "qRoadEncodeData": (False, 20.),
 
   # dp
-  "dragonConf": (False, 1.),
-  "liveMapData": (True, 0.),
+  # legacy
+  "driverCameraState": (True, 10., 10),
+  "driverEncodeIdx": (False, 10., 1),
+  "driverState": (True, 10, 5),
+  "driverMonitoringState": (True, 10., 5),
   "sensorEvents": (True, 100., 100),
+  # conf
+  "dragonConf": (False, 1.),
+  # mapd
+  "liveMapData": (True, 0.),
 }
 service_list = {name: Service(new_port(idx), *vals) for  # type: ignore
                 idx, (name, vals) in enumerate(services.items())}
