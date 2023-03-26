@@ -672,6 +672,8 @@ class Controls:
         pass
       elif CS.steerFaultPermanent:
         pass
+      elif standstill:
+        pass
       elif CS.standstill:
         pass
       elif CS.gearShifter == car.CarState.GearShifter.reverse:
