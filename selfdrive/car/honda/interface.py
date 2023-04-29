@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
       # NIDECs don't allow acceleration near cruise_speed,
       # so limit limits of pid to prevent windup
       if CP.enableGasInterceptor:
-        return CarControllerParams.NIDEC_ACCEL_MIN, CarControllerParams.PEDAL_ACCEL_MAX
+        return CarControllerParams.PEDAL_ACCEL_MIN, CarControllerParams.PEDAL_ACCEL_MAX
       
       ACCEL_MAX_VALS = [CarControllerParams.NIDEC_ACCEL_MAX, 0.2]
       ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
