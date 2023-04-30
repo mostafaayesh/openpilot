@@ -9,7 +9,7 @@ from selfdrive.car.honda.hondacan import get_pt_bus
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS, CruiseSetting
 from selfdrive.car.interfaces import CarStateBase
 
-from common.params import put_nonblocking
+from common.params import Params, put_nonblocking
 import time
 from math import floor
 
@@ -309,6 +309,11 @@ class CarState(CarStateBase):
       if self.cruise_setting == 0:
         self.prev_read_distance_lines = self.read_distance_lines
         self.read_distance_lines = self.read_distance_lines % 4 + 1
+    elif self.prev_cruise_setting == CruiseSetting.LKAS_BUTTON:
+      if self.cruise_setting == 0:
+        dp_atl = int(Params().get("dp_atl").decode('utf-8'))
+        put_nonblocking('dp_atl', str(int(2 - dp_atl)))
+        put_nonblocking('dp_last_modified',str(floor(time.time())))
 
     if not self.read_distance_lines_init or self.read_distance_lines != self.prev_read_distance_lines:
         self.read_distance_lines_init = True
