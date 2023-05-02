@@ -124,9 +124,7 @@ class Controls:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     # dp
-    self.sm['dragonConf'].dpAtl = int(self.params.get('dp_atl', encoding='utf8'))
-    if self.sm['dragonConf'].dpAtl:
-      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALKA
+    self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALKA
     self.dp_temp_check = self.params.get_bool('dp_temp_check')
     self.dp_lateral_road_edge_detected = False
     # alt lat ctrl
@@ -678,8 +676,10 @@ class Controls:
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
-
-    if not standstill and CS.cruiseState.available and self.sm['dragonConf'].dpAtl > 0:
+    
+    dp_atl = int(Params().get("dp_atl").decode('utf-8'))
+    
+    if not standstill and CS.cruiseState.available and dp_atl > 0:
       if self.sm['liveCalibration'].calStatus != Calibration.CALIBRATED:
         pass
       elif CS.steerFaultTemporary:
