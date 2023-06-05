@@ -320,7 +320,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
 
-    params.put("dp_lateral_steer_rate_cost", "0.4")
+    params.put("dp_lateral_steer_rate_cost", "0.5")
     if params.get_bool('dp_honda_eps_mod'):
       if candidate == CAR.CIVIC:
         # tuned by a-tao
