@@ -688,8 +688,6 @@ class Controls:
         pass
       elif CS.gearShifter == car.CarState.GearShifter.reverse:
         pass
-      elif CS.steeringPressed:
-        pass
       else:
         CC.latActive = True
 
