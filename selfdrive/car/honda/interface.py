@@ -92,8 +92,9 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.2, 1.6, 1.9, 2.1]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
-      ret.vEgoStarting = 0.1
-      ret.stoppingDecelRate = 0.04 # brake_travel/s while trying to stop
+      ret.stoppingDecelRate = 0.4 # brake_travel/s while trying to stop
+      ret.vEgoStopping = 0.3
+      ret.vEgoStarting = 0.3
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
