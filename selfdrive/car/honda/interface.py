@@ -85,14 +85,6 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalActuatorDelay = 0.5 # s
       if candidate in HONDA_BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
-    elif ret.enableGasInterceptor:
-      ret.longitudinalTuning.kpBP = [0., 11., 24., 37.] # 0, 25, 55, 85 mph,
-      ret.longitudinalTuning.kpV = [1.2, 1.6, 1.9, 2.1]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
-      ret.stoppingDecelRate = 0.4 # brake_travel/s while trying to stop
-      ret.vEgoStopping = 0.3
-      ret.vEgoStarting = 0.3
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
