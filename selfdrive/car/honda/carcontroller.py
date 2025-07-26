@@ -29,7 +29,8 @@ def compute_gb_honda_nidec(accel, speed):
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
   gb = float(accel) / 4.8 - creep_brake
-  return clip(gb, 0.0, 1.0), clip(-gb, 0.0, 1.0)
+  just_brake = float(accel) / -4.0
+  return clip(gb, 0.0, 1.0), clip(just_brake, 0.0, 1.0)
 
 
 def compute_gas_brake(accel, speed, fingerprint):
@@ -230,7 +231,7 @@ class CarController(CarControllerBase):
           can_sends.extend(hondacan.create_acc_commands(self.packer, self.CAN, CC.enabled, CC.longActive, self.accel, self.gas,
                                                         self.stopping_counter, self.CP.carFingerprint))
         else:
-          apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
+          apply_brake = clip(self.brake_last - (wind_brake if self.brake_last <= 0.95 else 0.0), 0.0, 1.0)
           apply_brake = int(clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
@@ -243,7 +244,7 @@ class CarController(CarControllerBase):
 
           if self.CP.enableGasInterceptor:
             # way too aggressive at low speed without this
-            gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
+            gas_mult = 1.0
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
