@@ -26,7 +26,7 @@ class CarInterface(CarInterfaceBase):
     if CP.carFingerprint in HONDA_BOSCH:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     elif CP.enableGasInterceptor:
-      return CarControllerParams.NIDEC_ACCEL_MIN, CarControllerParams.NIDEC_ACCEL_MAX
+      return CarControllerParams.PEDAL_ACCEL_MIN, CarControllerParams.PEDAL_ACCEL_MAX
     else:
       # NIDECs don't allow acceleration near cruise_speed,
       # so limit limits of pid to prevent windup
@@ -88,7 +88,7 @@ class CarInterface(CarInterfaceBase):
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
-      ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiV = [0.6, 0.4, 0.25]
 
     eps_modified = False
     for fw in car_fw:
