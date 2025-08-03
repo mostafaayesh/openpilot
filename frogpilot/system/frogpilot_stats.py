@@ -124,8 +124,8 @@ def get_zip_code_center(latitude, longitude):
 def send_stats():
   frogpilot_toggles = get_frogpilot_toggles()
 
-  if frogpilot_toggles.frogs_go_moo:
-    return
+  #if frogpilot_toggles.frogs_go_moo:
+    #return
 
   install_influxdb_client()
   install_pgeocode()
