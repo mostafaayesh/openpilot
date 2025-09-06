@@ -14,6 +14,7 @@ from openpilot.common.realtime import DT_CTRL, DT_MDL, Ratekeeper, Priority, con
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
+from openpilot.selfdrive.controls.controlsd import LaneChangeDirection, LaneChangeState
 
 from openpilot.frogpilot.common.frogpilot_variables import THRESHOLD, get_frogpilot_toggles
 
@@ -63,6 +64,9 @@ class Track:
     self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
 
     # FrogPilot variables
+    self.leadLeft = False
+    self.leadRight = False
+
     self.leadTrackID = 0
 
     self.radarfulFilter = FirstOrderFilter(0, 0.5, self.K_A[0][1])
@@ -108,14 +112,26 @@ class Track:
 
   def potential_adjacent_lead(self, left: bool, standstill: bool, model_data: capnp._DynamicStructReader):
     if standstill or self.vLead < 1 or self.leadTrackID == self.identifier:
+      print(f"Early exit triggered: standstill={standstill}, vLead={self.vLead}, leadTrackID={self.leadTrackID}, identifier={self.identifier}")
       return False
 
     if left:
       left_lane = interp(self.dRel, model_data.laneLines[1].x, model_data.laneLines[1].y)
-      return -self.yRel < left_lane
+      if -self.yRel < left_lane:
+        self.leadLeft = True
+        self.leadRight = False
+        return True
     else:
       right_lane = interp(self.dRel, model_data.laneLines[2].x, model_data.laneLines[2].y)
-      return -self.yRel > right_lane
+      if -self.yRel > right_lane:
+        self.leadLeft = False
+        self.leadRight = True
+        return True
+
+    self.leadLeft = False
+    self.leadRight = False
+
+    return False
 
   def potential_far_lead(self, standstill: bool, model_data: capnp._DynamicStructReader):
     if standstill or self.vLead < 1 or abs(self.yRel) > 1:
@@ -149,7 +165,23 @@ def laplacian_pdf(x: float, mu: float, b: float):
   return math.exp(-abs(x-mu)/b)
 
 
-def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track]):
+def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, model_data: capnp._DynamicStructReader, tracks: dict[int, Track]):
+  if model_data.meta.laneChangeState == LaneChangeState.laneChangeStarting:
+    direction = model_data.meta.laneChangeDirection
+    print(f"Lane change starting, direction: {direction}")
+
+    if direction == LaneChangeDirection.left:
+      left_tracks = [track for track in tracks.values() if track.leadLeft]
+      print(f"Found {len(left_tracks)} left tracks")
+      if left_tracks:
+        return min(left_tracks, key=lambda c: c.dRel)
+
+    elif direction == LaneChangeDirection.right:
+      right_tracks = [track for track in tracks.values() if track.leadRight]
+      print(f"Found {len(right_tracks)} right tracks")
+      if right_tracks:
+        return min(right_tracks, key=lambda c: c.dRel)
+
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
@@ -196,7 +228,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
              low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > frogpilot_toggles.lead_detection_probability:
-    track = match_vision_to_track(v_ego, lead_msg, tracks)
+    track = match_vision_to_track(v_ego, lead_msg, model_data, tracks)
   else:
     track = None
 
