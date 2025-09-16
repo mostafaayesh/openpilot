@@ -116,8 +116,8 @@ class CarInterfaceBase(ABC):
     # FrogPilot variables
     self.always_on_lateral_allowed = False
 
-  def apply(self, c: car.CarControl, now_nanos: int, frogpilot_toggles) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
-    return self.CC.update(c, self.CS, now_nanos, frogpilot_toggles)
+  def apply(self, c: car.CarControl, now_nanos: int, v_cruise, frogpilot_toggles) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+    return self.CC.update(c, self.CS, now_nanos, v_cruise, frogpilot_toggles)
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):

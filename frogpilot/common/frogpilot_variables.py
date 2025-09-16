@@ -13,7 +13,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.gm.values import GMFlags
+from openpilot.selfdrive.car.gm.values import CAMERA_ACC_CAR, SDGM_CAR, GMFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.mock.interface import CarInterface
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
@@ -41,6 +41,8 @@ MAX_T_FOLLOW = 3.0                        # Maximum allowed following duration. 
 MINIMUM_LATERAL_ACCELERATION = 1.3        # m/s^2, typical minimum lateral acceleration when taking curves
 PLANNER_TIME = ModelConstants.T_IDXS[-1]  # Length of time the model projects out for
 THRESHOLD = 0.63                          # Requires the condition to be true for ~1 second
+
+SUPPORTED_CSLC_MODELS = [CAMERA_ACC_CAR, SDGM_CAR]
 
 NON_DRIVING_GEARS = [GearShifter.neutral, GearShifter.park, GearShifter.reverse, GearShifter.unknown]
 
@@ -170,6 +172,7 @@ frogpilot_default_params: list[tuple[str, str | bytes, int, str]] = [
   ("ClusterOffset", "1.015", 2, "1.015"),
   ("Compass", "0", 1, "0"),
   ("ConditionalExperimental", "1", 1, "0"),
+  ("CSLCEnabled", "0", 2, "0"),
   ("CurvatureData", "", 2, ""),
   ("CurveSpeedController", "1", 1, "0"),
   ("CustomAlerts", "0", 0, "0"),
@@ -561,6 +564,7 @@ class FrogPilotVariables:
     toggle.always_on_lateral_set = bool(CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL)
     toggle.car_make = CP.carName
     toggle.car_model = CP.carFingerprint
+    toggle.cslc_supported = toggle.car_model in SUPPORTED_CSLC_MODELS
     toggle.disable_openpilot_long = params.get_bool("DisableOpenpilotLongitudinal") if tuning_level >= level["DisableOpenpilotLongitudinal"] else default.get_bool("DisableOpenpilotLongitudinal")
     friction = FPCP.lateralTuning.torque.friction
     has_auto_tune = toggle.car_make in {"hyundai", "toyota"} and FPCP.lateralTuning.which() == "torque"
@@ -666,6 +670,8 @@ class FrogPilotVariables:
     toggle.conditional_signal = params.get_int("CESignalSpeed") * speed_conversion if toggle.conditional_experimental_mode and tuning_level >= level["CESignalSpeed"] else default.get_int("CESignalSpeed") * CV.MPH_TO_MS
     toggle.conditional_signal_lane_detection = toggle.conditional_signal != 0 and (params.get_bool("CESignalLaneDetection") if tuning_level >= level["CESignalLaneDetection"] else default.get_bool("CESignalLaneDetection"))
     toggle.cem_status = toggle.conditional_experimental_mode and (params.get_bool("ShowCEMStatus") if tuning_level >= level["ShowCEMStatus"] else default.get_bool("ShowCEMStatus")) or toggle.debug_mode
+
+    toggle.cslc = params.get_bool("CSLCEnabled") if toggle.cslc_supported and tuning_level >= level["CSLCEnabled"] else default.get_bool("CSLCEnabled")
 
     toggle.curve_speed_controller = toggle.openpilot_longitudinal and (params.get_bool("CurveSpeedController") if tuning_level >= level["CurveSpeedController"] else default.get_bool("CurveSpeedController"))
     toggle.csc_status = toggle.curve_speed_controller and (params.get_bool("ShowCSCStatus") if tuning_level >= level["ShowCSCStatus"] else default.get_bool("ShowCSCStatus")) or toggle.debug_mode

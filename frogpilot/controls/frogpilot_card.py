@@ -104,7 +104,7 @@ class FrogPilotCard:
     if sm.updated["frogpilotPlan"] or any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in carState.buttonEvents):
       self.accel_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in carState.buttonEvents)
 
-    if sm.updated["frogpilotPlan"] or any(be.type == ButtonType.decelCruise for be in carState.buttonEvents):
+    if sm.updated["frogpilotPlan"] or any(be.type in (ButtonType.decelCruise, ButtonType.setCruise) for be in carState.buttonEvents):
       self.decel_pressed = any(be.type == ButtonType.decelCruise for be in carState.buttonEvents)
 
     self.force_coast &= not (carState.brakePressed or carState.gasPressed)

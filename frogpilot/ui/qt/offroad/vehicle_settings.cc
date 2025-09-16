@@ -150,6 +150,21 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(FrogPilotSettingsWindow *parent) 
   });
   settingsList->addItem(disableOpenpilotLong);
 
+  enableCSLC = new ParamControl("CSLCEnabled", tr("Fake openpilot Longitudinal"), tr("<b>Enable openpilot-styled speed control on unsupported vehicles by using the built-in cruise control.</b>"), "");
+  QObject::connect(enableCSLC, &ToggleControl::toggleFlipped, [this](bool state) {
+    if (!state) {
+      if (FrogPilotConfirmationDialog::toggleReboot(this)) {
+        Hardware::reboot();
+      }
+    }
+
+    usingCSLC = state;
+
+    updateToggles();
+  });
+  usingCSLC = params.getBool("CSLCEnabled");
+  settingsList->addItem(enableCSLC);
+
   FrogPilotListWidget *gmList = new FrogPilotListWidget(this);
   FrogPilotListWidget *hkgList = new FrogPilotListWidget(this);
   FrogPilotListWidget *toyotaList = new FrogPilotListWidget(this);
@@ -320,11 +335,15 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(FrogPilotSettingsWindow *parent) 
 }
 
 void FrogPilotVehiclesPanel::showEvent(QShowEvent *event) {
+  FrogPilotUIState &fs = *frogpilotUIState();
+  QJsonObject &frogpilot_toggles = fs.frogpilot_toggles;
+
   if (forceOpenDescriptions) {
     disableOpenpilotLong->showDescription();
     forceFingerprint->showDescription();
   }
 
+  cslcSupported = frogpilot_toggles.value("cslc_supported").toBool();
   frogpilotToggleLevels = parent->frogpilotToggleLevels;
   hasExperimentalOpenpilotLongitudinal = parent->hasExperimentalOpenpilotLongitudinal;
   hasOpenpilotLongitudinal = parent->hasOpenpilotLongitudinal;
@@ -338,6 +357,7 @@ void FrogPilotVehiclesPanel::showEvent(QShowEvent *event) {
   isVolt = parent->isVolt;
   openpilotLongitudinalControlDisabled = parent->openpilotLongitudinalControlDisabled || params.getBool("DisableOpenpilotLongitudinal");
   tuningLevel = parent->tuningLevel;
+  usingCSLC &= cslcSupported;
 
   QStringList detected;
   if (hasPedal) detected << "comma Pedal";
@@ -422,8 +442,9 @@ void FrogPilotVehiclesPanel::updateToggles() {
     }
   }
 
-  disableOpenpilotLong->setVisible((hasOpenpilotLongitudinal || openpilotLongitudinalControlDisabled) && !hasExperimentalOpenpilotLongitudinal && tuningLevel >= frogpilotToggleLevels["DisableOpenpilotLongitudinal"].toDouble());
-  forceFingerprint->setVisible(tuningLevel >= frogpilotToggleLevels["ForceFingerprint"].toDouble());
+  disableOpenpilotLong->setVisible((hasOpenpilotLongitudinal || openpilotLongitudinalControlDisabled) && !hasExperimentalOpenpilotLongitudinal && !usingCSLC && tuningLevel >= frogpilotToggleLevels["DisableOpenpilotLongitudinal"].toBool());
+  enableCSLC->setVisible(!hasOpenpilotLongitudinal && cslcSupported && tuningLevel >= frogpilotToggleLevels["CSLCEnabled"].toBool());
+  forceFingerprint->setVisible(tuningLevel >= frogpilotToggleLevels["ForceFingerprint"].toBool());
 
   openDescriptions(forceOpenDescriptions, toggles);
 

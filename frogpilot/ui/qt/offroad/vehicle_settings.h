@@ -18,6 +18,7 @@ private:
   void updateState(const UIState &s);
   void updateToggles();
 
+  bool cslcSupported;
   bool forceOpenDescriptions;
   bool hasExperimentalOpenpilotLongitudinal;
   bool hasOpenpilotLongitudinal;
@@ -31,6 +32,7 @@ private:
   bool isVolt;
   bool openpilotLongitudinalControlDisabled;
   bool started;
+  bool usingCSLC;
 
   int tuningLevel;
 
@@ -47,6 +49,7 @@ private:
   FrogPilotSettingsWindow *parent;
 
   ParamControl *disableOpenpilotLong;
+  ParamControl *enableCSLC;
   ParamControl *forceFingerprint;
 
   Params params;

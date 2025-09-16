@@ -312,6 +312,21 @@ class CarInterface(CarInterfaceBase):
     if ACCELERATOR_POS_MSG not in fingerprint[CanBus.POWERTRAIN]:
       ret.flags |= GMFlags.NO_ACCELERATOR_POS_MSG.value
 
+    if frogpilot_toggles.CSLC:
+      ret.openpilotLongitudinalControl = True
+      ret.pcmCruise = False
+
+      if candidate in CAMERA_ACC_CAR:
+        ret.stoppingDecelRate = 3.25  # == 8.33 mph/s (OFF + ON = 12 frames)
+      else:
+        ret.stoppingDecelRate = 7.45  # == 16.67 mph/s (OFF + ON = 30 frames)
+
+      ret.longitudinalActuatorDelay = 1.
+      ret.longitudinalTuning.kiBP = [0.]
+      ret.longitudinalTuning.kiV = [0.]
+
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CSLC
+
     return ret
 
   # returns a car.CarState
