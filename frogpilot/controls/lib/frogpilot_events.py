@@ -30,6 +30,7 @@ class FrogPilotEvents:
     self.max_acceleration = 0
     self.random_event_timer = 0
     self.tracked_lead_distance = 0
+    self.previous_weather_id = 0
 
     self.played_events = set()
 
@@ -220,3 +221,8 @@ class FrogPilotEvents:
       self.events.add(FrogPilotEventName.turningLeft)
     elif sm["frogpilotModelV2"].turnDirection == TurnDirection.turnRight:
       self.events.add(FrogPilotEventName.turningRight)
+
+    if self.frogpilot_planner.frogpilot_weather.weather_id != self.previous_weather_id:
+      self.events.add(FrogPilotEventName.weatherChanged)
+
+      self.previous_weather_id = self.frogpilot_planner.frogpilot_weather.weather_id

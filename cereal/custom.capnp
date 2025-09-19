@@ -80,20 +80,21 @@ struct FrogPilotCarEvent @0x81c2f05a394cf4af {
     trafficModeInactive @14;
     turningLeft @15;
     turningRight @16;
+    weatherChanged @17;
 
     # Random Events
-    accel30 @17;
-    accel35 @18;
-    accel40 @19;
-    dejaVuCurve @20;
-    firefoxSteerSaturated @21;
-    hal9000 @22;
-    openpilotCrashedRandomEvent @23;
-    thisIsFineSteerSaturated @24;
-    toBeContinued @25;
-    vCruise69 @26;
-    yourFrogTriedToKillMe @27;
-    youveGotMail @28;
+    accel30 @18;
+    accel35 @19;
+    accel40 @20;
+    dejaVuCurve @21;
+    firefoxSteerSaturated @22;
+    hal9000 @23;
+    openpilotCrashedRandomEvent @24;
+    thisIsFineSteerSaturated @25;
+    toBeContinued @26;
+    vCruise69 @27;
+    yourFrogTriedToKillMe @28;
+    youveGotMail @29;
   }
 }
 
