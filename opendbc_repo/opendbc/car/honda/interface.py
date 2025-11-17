@@ -95,14 +95,19 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
       ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
 
+    eps_modded = False
     # Disable control if EPS mod detected
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
-        ret.dashcamOnly = True
+        eps_modded = True
 
     if candidate == CAR.HONDA_CIVIC:
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
+      if eps_modded:
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 15360], [0, 2560, 3840]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1575], [0.05175]]
+        ret.lateralTuning.pid.kf = 0.00004
 
     elif candidate in (CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_BOSCH_DIESEL):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
