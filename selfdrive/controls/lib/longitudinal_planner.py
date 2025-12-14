@@ -15,7 +15,8 @@ from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
-from openpilot.frogpilot.common.frogpilot_variables import MINIMUM_LATERAL_ACCELERATION
+from openpilot.selfdrive.controls.lib.custom_acceleration import MINIMUM_LATERAL_ACCELERATION, get_max_allowed_accel
+from opendbc.car.honda.values import HONDA_NIDEC_PEDAL_TUNE
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
@@ -131,6 +132,9 @@ class LongitudinalPlanner:
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
       if not sm['frogpilotPlan'].cscControllingSpeed:
         accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
+      
+      if self.CP.carFingerprint in HONDA_NIDEC_PEDAL_TUNE:
+        accel_clip[1] = get_max_allowed_accel(v_ego)
     else:
       accel_clip = [ACCEL_MIN, ACCEL_MAX]
 

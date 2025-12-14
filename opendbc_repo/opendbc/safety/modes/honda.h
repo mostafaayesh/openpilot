@@ -32,6 +32,8 @@ static bool honda_fwd_brake = false;
 static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
+static bool honda_gas_interceptor = false;
+typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -143,6 +145,12 @@ static void honda_rx_hook(const CANPacket_t *msg) {
     gas_pressed = msg->data[0] != 0U;
   }
 
+  if (honda_gas_interceptor) {
+    if (msg->addr == 0x201U) {
+      gas_pressed = ((msg->data[0] << 8) | msg->data[1]) > 0;
+    }
+  }
+
   // disable stock Honda AEB in alternative experience
   if (!(alternative_experience & ALT_EXP_DISABLE_STOCK_AEB)) {
     if ((msg->bus == 2U) && (msg->addr == 0x1FAU)) {
@@ -172,6 +180,11 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
     .inactive_gas = -30000,
   };
 
+  const LongitudinalLimits HONDA_GAS_INTERCEPTOR_LIMITS = {
+    .max_gas = 2000, // TODO: verify scale
+    .inactive_gas = 0, // TODO: verify inactive
+  };
+
   const LongitudinalLimits HONDA_NIDEC_LONG_LIMITS = {
     .max_gas = 198,  // 0xc6
     .max_brake = 255,
@@ -194,6 +207,16 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
     violation |= longitudinal_gas_checks(pcm_gas, HONDA_NIDEC_LONG_LIMITS);
     if (violation) {
       tx = false;
+    }
+  }
+
+  // GAS INTERCEPTOR
+  if (honda_gas_interceptor) {
+    if ((msg->addr == 0x200U)) {
+      int gas_interceptor = ((msg->data[0] << 8) | msg->data[1]);
+      if (longitudinal_gas_checks(gas_interceptor, HONDA_GAS_INTERCEPTOR_LIMITS)) {
+        tx = false;
+      }
     }
   }
 
@@ -280,6 +303,7 @@ static safety_config honda_nidec_init(uint16_t param) {
                                      {0x30C, 0, 8, .check_relay = true}, {0x33D, 0, 5, .check_relay = true}};
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
+  const uint16_t HONDA_PARAM_GAS_INTERCEPTOR = 32;
 
   honda_hw = HONDA_NIDEC;
   honda_brake = 0;
@@ -289,6 +313,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_bosch_long = false;
   honda_bosch_radarless = false;
   honda_bosch_canfd = false;
+  honda_gas_interceptor = GET_FLAG(param, HONDA_PARAM_GAS_INTERCEPTOR);
 
   safety_config ret;
 
@@ -296,23 +321,48 @@ static safety_config honda_nidec_init(uint16_t param) {
 
   if (enable_nidec_alt) {
     // For Nidecs with main on signal on an alternate msg (missing 0x326)
-    static RxCheck honda_nidec_alt_rx_checks[] = {
+      {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
+    };
+
+    static RxCheck honda_nidec_alt_interceptor_rx_checks[] = {
       HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(0)
       {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
+      {.msg = {{0x201, 0, 6, 100U, .max_counter = 0U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // GAS_SENSOR
     };
 
-    SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
+    if (honda_gas_interceptor) {
+        SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret);
+    } else {
+        SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
+    }
   } else {
     // Nidec includes BRAKE_COMMAND
-    static RxCheck honda_nidec_common_rx_checks[] = {
-      HONDA_COMMON_RX_CHECKS(0)
       {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
     };
 
-    SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
+    static RxCheck honda_nidec_common_interceptor_rx_checks[] = {
+      HONDA_COMMON_RX_CHECKS(0)
+      {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
+      {.msg = {{0x201, 0, 6, 100U, .max_counter = 0U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // GAS_SENSOR
+    };
+
+    if (honda_gas_interceptor) {
+        SET_RX_CHECKS(honda_nidec_common_interceptor_rx_checks, ret);
+    } else {
+        SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
+    }
   }
 
   SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+
+  static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x194, 0, 4, .check_relay = true}, {0x1FA, 0, 8, .check_relay = false},
+                                      {0x30C, 0, 8, .check_relay = true}, {0x33D, 0, 5, .check_relay = true}, {0x200, 0, 6, .check_relay = false}};
+
+  if (honda_gas_interceptor) {
+    SET_TX_MSGS(HONDA_N_INTERCEPTOR_TX_MSGS, ret);
+  } else {
+    SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  }
 
   return ret;
 }

@@ -29,6 +29,9 @@ class CarControllerParams:
   NIDEC_GAS_MAX = 198  # 0xc6
   NIDEC_BRAKE_MAX = 1024 // 4
 
+  # OPGM variables
+  PEDAL_MSG = 0x201
+
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
   BOSCH_ACCEL_MAX = 2.0  # m/s^2
 
@@ -55,7 +58,9 @@ class HondaSafetyFlags(IntFlag):
   BOSCH_LONG = 2
   NIDEC_ALT = 4
   RADARLESS = 8
+  RADARLESS = 8
   BOSCH_CANFD = 16
+  GAS_INTERCEPTOR = 32
 
 
 class HondaFlags(IntFlag):
@@ -149,6 +154,9 @@ def radar_dbc_dict(pt_dict):
 # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
 # which improves controls quality as it removes the steering column torsion from feedback.
 # Tire stiffness factor fictitiously lower if it includes the steering column torsion effect.
+# For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
+
+
 # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
 
 
@@ -362,6 +370,8 @@ HONDA_BOSCH_RADARLESS = CAR.with_flags(HondaFlags.BOSCH_RADARLESS)
 HONDA_BOSCH_CANFD = CAR.with_flags(HondaFlags.BOSCH_CANFD)
 HONDA_BOSCH_ALT_RADAR = CAR.with_flags(HondaFlags.BOSCH_ALT_RADAR)
 HONDA_BOSCH_TJA_CONTROL = CAR.with_flags(HondaFlags.BOSCH_TJA_CONTROL)
+
+HONDA_NIDEC_PEDAL_TUNE = {CAR.HONDA_CIVIC, CAR.HONDA_CRV, CAR.ACURA_ILX, CAR.ACURA_RDX}
 
 
 DBC = CAR.create_dbc_map()

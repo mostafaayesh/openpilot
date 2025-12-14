@@ -148,6 +148,9 @@ class CarState(CarStateBase):
       ret.gearShifter = self.parse_gear_shifter(gear_position)
 
     ret.gasPressed = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"] > 1e-5
+    if self.CP.enableGasInterceptor:
+      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
+      ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
@@ -232,5 +235,8 @@ class CarState(CarStateBase):
     }
     if CP.enableBsm:
       parsers[Bus.body] = CANParser(DBC[CP.carFingerprint][Bus.body], [], CanBus(CP).radar)
+
+    if CP.enableGasInterceptor:
+      parsers[Bus.pt].add_can_msgs([("GAS_SENSOR", 50)])
 
     return parsers
