@@ -206,9 +206,22 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ALT_BRAKE.value
-    if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
-      ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.NIDEC_ALT.value
+    if candidate in HONDA_BOSCH:
+      ret.safetyConfigs[0].safetyParam |= HondaSafetyFlags.BOSCH_LONG
+      ret.minEnableSpeed = -1.
+
+    # Gas Interceptor
+    # 0x201 is Gas Interceptor
+    if 0x201 in fingerprint[0]:
+      ret.enableGasInterceptor = True
+      ret.safetyConfigs[0].safetyParam |= HondaSafetyFlags.GAS_INTERCEPTOR
+      ret.openpilotLongitudinalControl = True
+      ret.minEnableSpeed = -1.
+      ret.pcmCruise = False
+
     if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
+      ret.stoppingDecelRate = 0.8
+      ret.vEgoStopping = 0.5
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_LONG.value
     if candidate in HONDA_BOSCH_RADARLESS:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value

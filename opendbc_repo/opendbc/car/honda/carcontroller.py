@@ -22,8 +22,9 @@ def compute_gb_honda_nidec(accel, speed):
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  return float(accel) / 1.6, -float(accel) / 4.0 - creep_brake
 
 
 def compute_gas_brake(accel, speed, fingerprint):
@@ -181,7 +182,12 @@ class CarController(CarControllerBase):
                      np.clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      np.clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = float(np.interp(gas - brake, pcm_speed_BP, pcm_speed_V))
+      pcm_speed = float(np.interp(gas - brake, pcm_speed_BP, pcm_speed_V))
       pcm_accel = int(np.clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
+
+    if self.CP.enableGasInterceptor:
+      pcm_speed = 0.
+      pcm_accel = 0.
 
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS | HONDA_BOSCH_CANFD:
@@ -215,7 +221,13 @@ class CarController(CarControllerBase):
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
                                                          self.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
+          self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
+
+          if self.CP.enableGasInterceptor:
+            # send exactly zero if apply_brake is active
+            interceptor_gas_amount = 0 if apply_brake > 0 else int(gas * 255.0) # Check scale
+            can_sends.append(hondacan.create_gas_interceptor_command(self.packer, interceptor_gas_amount, self.frame % 4))
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:

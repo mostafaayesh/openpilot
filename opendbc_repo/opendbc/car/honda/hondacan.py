@@ -244,3 +244,13 @@ def honda_checksum(address: int, sig, d: bytearray) -> int:
   if extended:
     s += 3
   return s & 0xF
+
+
+def create_gas_interceptor_command(packer, gas_amount, idx):
+  # DATE_TIME is 0 for consistency with other messages
+  values = {
+    "INTERCEPTOR_GAS": gas_amount,
+    "INTERCEPTOR_GAS2": gas_amount,
+    "IDX": idx,
+  }
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
