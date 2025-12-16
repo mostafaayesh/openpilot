@@ -58,7 +58,6 @@ class HondaSafetyFlags(IntFlag):
   BOSCH_LONG = 2
   NIDEC_ALT = 4
   RADARLESS = 8
-  RADARLESS = 8
   BOSCH_CANFD = 16
   GAS_INTERCEPTOR = 32
 

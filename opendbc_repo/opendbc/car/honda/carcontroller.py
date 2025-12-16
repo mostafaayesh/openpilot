@@ -22,8 +22,7 @@ def compute_gb_honda_nidec(accel, speed):
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+
   return float(accel) / 1.6, -float(accel) / 4.0 - creep_brake
 
 
@@ -182,7 +181,7 @@ class CarController(CarControllerBase):
                      np.clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      np.clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = float(np.interp(gas - brake, pcm_speed_BP, pcm_speed_V))
-      pcm_speed = float(np.interp(gas - brake, pcm_speed_BP, pcm_speed_V))
+
       pcm_accel = int(np.clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 
     if self.CP.enableGasInterceptor:
@@ -221,7 +220,7 @@ class CarController(CarControllerBase):
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
                                                          self.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
-          self.apply_brake_last = apply_brake
+
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
           if self.CP.enableGasInterceptor:
