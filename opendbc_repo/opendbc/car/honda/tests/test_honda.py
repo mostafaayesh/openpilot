@@ -221,10 +221,11 @@ class TestHondaFingerprint:
     civic_cp = CarInterface.get_params(CAR.HONDA_CIVIC, gen_empty_fingerprint(), civic_fw, False, False, False, toggles)
     assert not civic_cp.dashcamOnly
     assert civic_cp.flags & HondaFlags.EPS_MODIFIED
-    assert list(civic_cp.lateralParams.torqueBP) == [0, 2560, 8000]
+    assert list(civic_cp.lateralParams.torqueBP) == [0, 2560, 15360]
     assert list(civic_cp.lateralParams.torqueV) == [0, 2560, 3840]
-    assert list(civic_cp.lateralTuning.pid.kpV) == pytest.approx([0.3])
-    assert list(civic_cp.lateralTuning.pid.kiV) == pytest.approx([0.1])
+    assert list(civic_cp.lateralTuning.pid.kpV) == pytest.approx([0.1575])
+    assert list(civic_cp.lateralTuning.pid.kiV) == pytest.approx([0.05175])
+    assert civic_cp.lateralTuning.pid.kf == pytest.approx(0.00004)
 
     civic_bosch_fw = [CarParams.CarFw(ecu=CarParams.Ecu.eps, fwVersion=b'39990-TGG,A020\x00\x00', address=0x18DA30F1, subAddress=0)]
     civic_bosch_cp = CarInterface.get_params(CAR.HONDA_CIVIC_BOSCH, gen_empty_fingerprint(), civic_bosch_fw, False, False, False, toggles)
