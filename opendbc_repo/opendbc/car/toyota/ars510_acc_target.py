@@ -10,6 +10,7 @@ from opendbc.car.structs import RadarData
 from opendbc.car.interfaces import RadarInterfaceBase
 
 RADAR_DBC = "toyota_tss2_ars510"
+TARGET_ADDRS = {0x235, 0x237, 0x239}
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -23,7 +24,9 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     self.frame += 1
-    self.updated_messages.update(self.rcp.update(can_strings))
+    packets = [(nanos, [(addr, dat, src) for addr, dat, src in frames if addr not in TARGET_ADDRS or len(dat) == 8])
+               for nanos, frames in can_strings]
+    self.updated_messages.update(self.rcp.update(packets))
     t = can_strings[-1][0] * 1e-9 if can_strings else None
     cycle = self.rcp.vl["ACC_TARGET_3"]["TIMESTAMP"]
     clock_seen = bool(self.rcp.ts_nanos["ACC_TARGET_3"]["TIMESTAMP"])

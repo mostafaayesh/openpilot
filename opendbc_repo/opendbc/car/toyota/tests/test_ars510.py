@@ -140,6 +140,17 @@ def test_fused_gates_uncertain_far_and_out_of_path_objects(kwargs):
   assert radar.points(1.0, object_record(**kwargs)) == []
 
 
+def test_fused_damps_a_high_uncertainty_speed_excursion():
+  radar = Ars510Radar()
+  radar.v_ego = (1.0, 20)
+  first = radar.points(1.0, object_record(age=126))[0]
+  raw_closing = (600 - 510.5) * 0.149 - 20
+  second = radar.points(1.06, object_record(age=126, speed_code=600, uncertainty=127))[0]
+  assert raw_closing < -6
+  assert second[0] == first[0]
+  assert abs(second[3] - first[3]) < 0.2
+
+
 def test_fused_keeps_healthy_tracks_between_scans_then_reports_actual_silence(monkeypatch):
   radar = fused_radar()
   monkeypatch.setattr(radar.radar, "update", lambda t, *_: [(1, 30, 0, -1)] if round(t * 100) % 6 == 0 else None)
@@ -182,6 +193,26 @@ def test_acc_target_decodes_one_lead_once_per_cycle_and_clears_no_target():
     assert isnan(pt.aRel) and isnan(pt.yvRel)
   ret = radar.update([(1_600_000_000, acc_frames(packer, 30, 660000, present=False))])
   assert not ret.points and not ret.errors.canError
+
+
+def test_acc_target_decodes_captured_rav4_hybrid_frame_bank():
+  # Stock RAV4 Hybrid 2022 route 2475fb3eb2ffcc2e/2022-04-29--12-46-23, segment 0.
+  frames = [(0x235, bytes.fromhex("af4563802b24040e"), 1),
+            (0x237, bytes.fromhex("ff404cc3c10a9550"), 1),
+            (0x239, bytes.fromhex("2a464008061677c8"), 1)]
+  ret = AccRadarInterface(structs.CarParams()).update([(1_000_000_000, frames)])
+  pt, = ret.points
+  assert not ret.errors.canError
+  assert pt.trackId == 14
+  assert (pt.dRel, pt.yRel, pt.vRel) == pytest.approx((3.825, 1.68, 0.125))
+
+
+@pytest.mark.parametrize("bus,length", [(1, 7), (1, 9), (0, 8), (2, 8), (129, 8)])
+def test_acc_target_ignores_malformed_frames_and_non_native_copies(bus, length):
+  radar = AccRadarInterface(structs.CarParams())
+  frames = [(addr, bytes(length), bus) for addr in (0x235, 0x237, 0x239)]
+  assert radar.update([(1_000_000_000, frames)]) is None
+  assert radar.last_record_t is None
 
 
 @pytest.mark.parametrize("silent_clock", [False, True])
