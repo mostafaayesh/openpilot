@@ -814,7 +814,7 @@ class TestLatControl:
     assert get_genesis_gv70_unwind_ff_scale(-0.3, -0.3, -0.8, 15.0) == 1.0
 
     early_unwind = get_genesis_gv70_unwind_ff_scale(-0.7, -0.6, 0.8, 15.0)
-    assert early_unwind < 1.0
+    assert early_unwind == 1.0
     reduced = get_genesis_gv70_unwind_ff_scale(-0.2, -1.0, 1.0, 20.0)
     assert 0.6 < reduced < 1.0
     assert get_genesis_gv70_unwind_ff_scale(-0.2, -1.0, -1.0, 20.0) == 1.0
@@ -958,18 +958,58 @@ class TestLatControl:
 
   def test_genesis_gv70_high_speed_error_damping(self):
     assert get_genesis_gv70_high_speed_error_scale(0.2, 0.2, 0.8, 20.0) == 1.0
-    assert get_genesis_gv70_high_speed_error_scale(-0.7, 0.58, -0.8, 33.5) < 1.0
-    assert get_genesis_gv70_high_speed_error_scale(-0.7, 0.58, -0.8, 20.0) > \
-      get_genesis_gv70_high_speed_error_scale(-0.7, 0.58, -0.8, 33.5)
+    assert get_genesis_gv70_high_speed_error_scale(-0.7, 0.58, -0.8, 33.5) == 1.0
+    assert get_genesis_gv70_high_speed_error_scale(-0.7, -0.95, 0.8, 20.0) > \
+      get_genesis_gv70_high_speed_error_scale(-0.7, -0.95, 0.8, 33.5)
 
   def test_genesis_gv70_reversal_damping_is_medium_speed_and_phase_gated(self):
     same_direction = get_genesis_gv70_reversal_output_scale(0.7, 0.9, 0.8, 16.0)
-    low_speed = get_genesis_gv70_reversal_output_scale(-0.7, 0.7, -0.8, 8.0)
-    route_speed = get_genesis_gv70_reversal_output_scale(-0.7, 0.7, -0.8, 15.0)
+    low_speed = get_genesis_gv70_reversal_output_scale(-0.7, -1.0, 0.8, 8.0)
+    route_speed = get_genesis_gv70_reversal_output_scale(-0.7, -1.0, 0.8, 15.0)
 
     assert same_direction == pytest.approx(1.0)
     assert route_speed < 1.0
     assert route_speed < low_speed
+
+  @pytest.mark.parametrize("direction", [-1.0, 1.0])
+  def test_genesis_gv70_curve_damping_preserves_tracking_and_direction_changes(self, direction):
+    for scale in (get_genesis_gv70_unwind_ff_scale, get_genesis_gv70_high_speed_error_scale,
+                  get_genesis_gv70_reversal_output_scale):
+      for measured in (0.0, 0.55, 0.8, -0.8):
+        for jerk in (-0.8, 0.8):
+          assert scale(direction * 0.8, direction * measured, direction * jerk, 30.0) == 1.0
+      assert scale(direction * 0.8, direction * 1.1, -direction * 0.8, 30.0) < 1.0
+
+  def test_genesis_gv70_curve_damping_is_continuous_and_leaves_center_unchanged(self):
+    weight = latcontrol_vehicle_tunes._genesis_gv70_curve_damping_weight
+    for setpoint in (-0.25, 0.0, 0.25):
+      for measured in (-1.0, 0.0, 1.0):
+        assert weight(setpoint, measured) == 1.0
+    for setpoint in (-0.8, -0.55, -0.25, 0.25, 0.55, 0.8):
+      for measured in (setpoint - 0.2, setpoint, setpoint + 0.2):
+        assert 0.0 <= weight(setpoint, measured) <= 1.0
+        assert abs(weight(setpoint - 1e-7, measured) - weight(setpoint + 1e-7, measured)) < 2e-6
+        assert abs(weight(setpoint, measured - 1e-7) - weight(setpoint, measured + 1e-7)) < 2e-6
+
+  @pytest.mark.parametrize("direction", [-1.0, 1.0])
+  def test_genesis_gv70_undertracking_curve_keeps_undamped_feedforward(self, monkeypatch, direction):
+    def trace():
+      controller, VM, CS, params, toggles = self._build_torque_controller(HYUNDAI.GENESIS_GV70_ELECTRIFIED_1ST_GEN)
+      CS.vEgo = 30.0
+      CS.steeringAngleDeg = math.degrees(VM.get_steer_from_curvature(-direction * 0.6 / CS.vEgo ** 2, CS.vEgo, 0.0))
+      request = direction * 0.8 / CS.vEgo ** 2
+      controller.curvature_request_buffer = deque([request] * controller.request_buffer_len, maxlen=controller.request_buffer_len)
+      rows = []
+      for _ in range(100):
+        output, _, state = controller.update(True, CS, VM, params, False, request, False, 0.2, None, None, toggles)
+        rows.append((output, state.desiredLateralAccel, state.p, state.i, state.d, state.f))
+      return rows
+
+    actual = trace()
+    for name in ("get_genesis_gv70_unwind_ff_scale", "get_genesis_gv70_high_speed_error_scale",
+                 "get_genesis_gv70_reversal_output_scale"):
+      monkeypatch.setattr(latcontrol_torque, name, lambda *_args: 1.0)
+    assert actual == trace()
 
   def test_genesis_gv70_low_speed_center_overshoot_damping(self):
     center_overshoot = get_genesis_gv70_low_speed_center_overshoot_scale(0.02, 0.45, 22.0 * 0.44704)
@@ -1529,14 +1569,17 @@ class TestLatControl:
     (60.0, 0.0, 0.0),
     (100.0, 0.0, 0.0),
     (100.0, 0.65, 0.0),
-    (110.0, 0.0, 0.15),
-    (110.0, 0.65, 0.15),
+    (105.0, 0.0, 0.15),
+    (110.0, 0.0, 0.30),
+    (110.0, 0.65, 0.30),
     (120.0, 0.0, 0.30),
     (120.0, 0.65, 0.30),
     (120.0, -0.65, 0.30),
-    (120.0, 1.15, 0.15),
-    (120.0, -1.15, 0.15),
-    (120.0, 1.5, 0.0),
+    (120.0, 1.15, 0.30),
+    (120.0, -1.15, 0.30),
+    (120.0, 1.6, 0.15),
+    (120.0, -1.6, 0.15),
+    (120.0, 2.0, 0.0),
     (140.0, 0.0, 0.30),
     (140.0, -2.0, 0.0),
   ])

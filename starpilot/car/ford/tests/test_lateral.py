@@ -452,7 +452,7 @@ def test_mach_e_reversal_does_not_reapply_old_direction_at_desired_zero_crossing
   result = controller.update(SimpleNamespace(latActive=True), car_state(speed=12.0, curvature=sign * 0.00462),
                              SimpleNamespace(curvature=-sign * 0.00034))
   assert result.active
-  assert result.curvature == pytest.approx(-sign * 0.00034)
+  assert result.curvature == pytest.approx(-sign * 0.00138)
   assert result.path_angle == 0.0
 
 
