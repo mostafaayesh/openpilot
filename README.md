@@ -14,9 +14,6 @@ Openpilot provides
 * Lane Change Assist
 * Driver Monitoring *without wheel nags*
 
-StarPilot was formerly a GM targeted fork,
-but [has expanded to offer Quality-Of-Life improvements for all](#features)!
-
 Ford-specific lateral-control and vehicle-support work includes substantial adaptations from
 [BluePilot](https://github.com/BluePilotDev/bluepilot/tree/bp-7.0), principally developed by
 [Alan Polk](https://github.com/alan-polk) with additional BluePilot contributors. StarPilot's
@@ -42,12 +39,12 @@ installation guides, and software configuration.
 
 ## Features
 
-* *Full support for Comma C3, C3X, and C4*
+* **Full support for Comma C3, C3X, and C4**
 * Full support for chestnut/eGPU on C3, C3X, and C4. C3/C3X may require special gps handling.
 * Model switcher with all of comma's tinygrad driving models
 * StarPilot custom torque controller
 * StarPilot custom longitudinal planner for both radar and VoACC (visual only, radar-less) vehicles
-* *Custom tuning for an expanding list of vehicles*
+* **Custom tuning for an expanding list of vehicles**
 * Firestar Lateral Method -
 Auto tuning system to adapt openpilot to *your* car's unique lateral characteristics.
 * Galaxy: StarPilot's portal to configure your comma device using your phone from anywhere.
