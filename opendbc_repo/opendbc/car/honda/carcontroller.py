@@ -15,27 +15,30 @@ from opendbc.sunnypilot.car.honda.eps_mod import EpsModCarController
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+NIDEC_BRAKE_MODIFIER_MAX = 0.8
+
 
 def compute_gb_honda_bosch(accel, speed):
   # TODO returns 0s, is unused
   return 0.0, 0.0
 
 
-def compute_gb_honda_nidec(accel, speed):
+def compute_gb_honda_nidec(accel, speed, brake_modifier=0.0):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+  gas = float(accel) / 4.0 - creep_brake
+  brake = float(accel) / (-4.8 + brake_modifier) + creep_brake
+  return np.clip(gas, 0.0, 1.0), np.clip(brake, 0.0, 1.0)
 
 
-def compute_gas_brake(accel, speed, CP):
+def compute_gas_brake(accel, speed, CP, brake_modifier=0.0):
   if CP.flags & HondaFlags.BOSCH:
     return compute_gb_honda_bosch(accel, speed)
   else:
-    return compute_gb_honda_nidec(accel, speed)
+    return compute_gb_honda_nidec(accel, speed, brake_modifier)
 
 
 # TODO not clear this does anything useful
@@ -119,6 +122,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.brake = 0.0
     self.last_torque = 0.0
     self.pitch = 0.0
+    self.brake_modifier = 0.0
 
   def update(self, CC, CC_SP, CS, now_nanos):
     MadsCarController.update(self, self.CP, CC, CC_SP)
@@ -135,10 +139,16 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
 
     if CC.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel + hill_brake, CS.out.vEgo, self.CP)
+      # ramp up brake strength while max deceleration is sustained, up to full brake at -4.0 m/s^2
+      if actuators.accel + hill_brake < -3.9:
+        self.brake_modifier = min(self.brake_modifier + 0.01, NIDEC_BRAKE_MODIFIER_MAX)
+      else:
+        self.brake_modifier = 0.0
+      gas, brake = compute_gas_brake(actuators.accel + hill_brake, CS.out.vEgo, self.CP, self.brake_modifier)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
+      self.brake_modifier = 0.0
 
     # *** rate limit steer ***
     limited_torque = rate_limit(actuators.torque, self.last_torque, -self.params.STEER_DELTA_DOWN * DT_CTRL,
@@ -149,7 +159,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady)
 
     # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
+    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., 3 * DT_CTRL)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     alert_fcw, alert_steer_required = process_hud_alert(hud_control.visualAlert)
