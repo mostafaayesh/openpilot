@@ -7,6 +7,13 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import IntFlag
 
+from opendbc.car.honda.values import CAR
+
+# gas interceptor cars using the ISO 15622:2018 accel limit curve instead of NIDEC_ACCEL_MAX
+HONDA_NIDEC_PEDAL_TUNE = {CAR.HONDA_CLARITY, CAR.HONDA_CIVIC}
+PEDAL_ACCEL_MAX_BP = [0., 5., 20.]  # m/s
+PEDAL_ACCEL_MAX_V = [4.0, 4.0, 3.0]  # m/s^2
+
 
 class HondaFlagsSP(IntFlag):
   NIDEC_HYBRID = 1

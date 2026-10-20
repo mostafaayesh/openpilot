@@ -10,7 +10,8 @@ from opendbc.car.honda.carstate import CarState
 from opendbc.car.honda.radar_interface import RadarInterface
 from opendbc.car.interfaces import CarInterfaceBase
 
-from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP, HondaSafetyFlagsSP
+from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP, HondaSafetyFlagsSP, HONDA_NIDEC_PEDAL_TUNE, PEDAL_ACCEL_MAX_BP, \
+                                                    PEDAL_ACCEL_MAX_V
 
 TransmissionType = structs.CarParams.TransmissionType
 
@@ -27,6 +28,8 @@ class CarInterface(CarInterfaceBase):
     if CP.carFingerprint in HONDA_BOSCH:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     elif CP_SP.enableGasInterceptor:
+      if CP.carFingerprint in HONDA_NIDEC_PEDAL_TUNE:
+        return CarControllerParams.NIDEC_ACCEL_MIN, float(np.interp(current_speed, PEDAL_ACCEL_MAX_BP, PEDAL_ACCEL_MAX_V))
       return CarControllerParams.NIDEC_ACCEL_MIN, CarControllerParams.NIDEC_ACCEL_MAX
     else:
       # NIDECs don't allow acceleration near cruise_speed,
