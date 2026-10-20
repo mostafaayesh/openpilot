@@ -31,7 +31,7 @@ class TestHondaEpsMod(unittest.TestCase):
 
     self.assertFalse(CP.dashcamOnly)
 
-  @parameterized("fw, expected", [(b'39990-TBA,A030\x00\x00', [3840, 2560, -2898, -3840]),  # modified: nonlinear lookup
+  @parameterized("fw, expected", [(b'39990-TBA,A030\x00\x00', [3840, 2795, -3072, -3840]),  # modified: nonlinear lookup
                                   (b'39990-TBA-A030\x00\x00', None)])  # stock: no lookup, upstream STEER_MAX applies
   def test_eps_mod_apply_torque(self, fw, expected):
     car_name = CAR.HONDA_CIVIC

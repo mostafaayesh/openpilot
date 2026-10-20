@@ -20,7 +20,7 @@ EPS_MOD_TORQUE_LOOKUP = {
   # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
   # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
   # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
-  CAR.HONDA_CIVIC: ([0, 2560, 8000], [0, 2560, 3840]),
+  CAR.HONDA_CIVIC: ([0, 2560, 15360], [0, 2560, 3840]),
   CAR.HONDA_CIVIC_BOSCH: ([0, 2564, 8000], [0, 2564, 3840]),
   CAR.HONDA_CIVIC_BOSCH_DIESEL: ([0, 2564, 8000], [0, 2564, 3840]),
   CAR.HONDA_CIVIC_2022: ([0, 2564, 8000], [0, 2564, 3840]),
