@@ -18,8 +18,11 @@ from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
-# Default lead acceleration decay set to 50% at 1s
-_LEAD_ACCEL_TAU = 1.5
+# Default lead acceleration decay
+_LEAD_ACCEL_TAU = 0.6
+
+# weight of the newest model lead accel when smoothing vision-only leads
+_VISION_A_LEAD_WEIGHT = 0.8
 
 # radar tracks
 SPEED, ACCEL = 0, 1     # Kalman filter states enum
@@ -78,7 +81,7 @@ class Track:
 
     # Learn if constant acceleration
     if abs(self.aLeadK) < 0.5:
-      self.aLeadTau.x = _LEAD_ACCEL_TAU
+      self.aLeadTau.x = min(max(self.aLeadTau.x, 1e-2) * 1.1, _LEAD_ACCEL_TAU)
     else:
       self.aLeadTau.update(0.0)
 
@@ -137,15 +140,17 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     return None
 
 
-def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float, lead_prob: float):
+def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float, lead_prob: float,
+                               a_lead_prev: float = 0.0):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
+  a_lead = _VISION_A_LEAD_WEIGHT * float(lead_msg.a[0]) + (1 - _VISION_A_LEAD_WEIGHT) * a_lead_prev
   return {
     "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
     "yRel": float(-lead_msg.y[0]),
     "vRel": float(lead_v_rel_pred),
     "vLead": float(v_ego + lead_v_rel_pred),
     "vLeadK": float(v_ego + lead_v_rel_pred),
-    "aLeadK": float(lead_msg.a[0]),
+    "aLeadK": a_lead,
     "aLeadTau": 0.3,
     "modelProb": float(lead_prob),
     "present": True,
@@ -156,7 +161,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 
 def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, lead_prob: float, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-             low_speed_override: bool = True) -> dict[str, Any]:
+             low_speed_override: bool = True, vision_a_lead_prev: float = 0.0) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -168,7 +173,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
     lead_dict = track.get_RadarState(lead_prob)
     lead_dict = get_custom_yrel(CP, CP_SP, lead_dict, lead_msg)
   elif (track is None) and ready and (lead_prob > .5):
-    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob)
+    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob, vision_a_lead_prev)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
@@ -200,6 +205,7 @@ class RadarD:
     self.tracks: dict[int, Track] = {}
     self.kalman_params = KalmanParams(DT_MDL)
     self.lead_prob_filters = [FirstOrderFilter(0.0, 0.2, DT_MDL) for _ in range(2)]
+    self.vision_a_leads = [0.0, 0.0]
 
     self.v_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_MDL))+1)
@@ -257,10 +263,15 @@ class RadarD:
         else:
           self.lead_prob_filters[i].update(lead_prob)
 
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x,
-                                          self.CP, self.CP_SP, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x,
-                                          self.CP, self.CP_SP, low_speed_override=False)
+      leads = []
+      for i in range(2):
+        lead = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[i], model_v_ego, self.lead_prob_filters[i].x,
+                        self.CP, self.CP_SP, low_speed_override=(i == 0), vision_a_lead_prev=self.vision_a_leads[i])
+        if lead['present'] and not lead['radar']:
+          self.vision_a_leads[i] = lead['aLeadK']
+        leads.append(lead)
+
+      self.radar_state.leadOne, self.radar_state.leadTwo = leads
 
   def publish(self, pm: messaging.PubMaster):
     assert self.radar_state is not None
