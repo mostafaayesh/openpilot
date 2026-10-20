@@ -14,6 +14,9 @@ HONDA_NIDEC_PEDAL_TUNE = {CAR.HONDA_CLARITY, CAR.HONDA_CIVIC}
 PEDAL_ACCEL_MAX_BP = [0., 5., 20.]  # m/s
 PEDAL_ACCEL_MAX_V = [4.0, 4.0, 3.0]  # m/s^2
 
+# gas interceptor cars with a larger pedal deadzone, to prevent false gas pressed readings
+HONDA_NIDEC_PEDAL_DEADZONE = {CAR.HONDA_ODYSSEY, CAR.HONDA_PILOT, CAR.HONDA_RIDGELINE}
+
 
 class HondaFlagsSP(IntFlag):
   NIDEC_HYBRID = 1
