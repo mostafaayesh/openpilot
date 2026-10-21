@@ -123,12 +123,16 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.HONDA_CIVIC:
       if eps_modified:
+        # EPS firmware flashed with eps_tool_tba.py -max (hondaeps repo, 39990-TBA-A030):
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
-        # modified request output values: 0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x3180
+        # modified request output values: 0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x2100, 0x2700, 0x2D00, 0x3200
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
-        # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
-        # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
+        # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0180, 0x01E0, 0x0268, 0x02F0
+        # also flashed: input clamp lifted to 0x06EE (last column fully reachable), P/D/out clamps
+        # 0x06EE/0x014D/0x06EE -> 0x1600/0x0340/0x1600, and filter_p_table (0xfae8) raised x1.4 so the
+        # EPS error controller actually drives to the raised targets instead of idling at the cap
+        # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in ~2.2x max
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 15360], [0, 2560, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1575], [0.05175]]
         ret.lateralTuning.pid.kf = 0.00004
