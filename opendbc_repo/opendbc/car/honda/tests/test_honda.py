@@ -309,7 +309,9 @@ class TestHondaFingerprint:
 
     assert CP.enableGasInterceptorDEPRECATED
     assert not CP.pcmCruise
-    assert accel_limits == (CarControllerParams.NIDEC_ACCEL_MIN, CarControllerParams.NIDEC_ACCEL_MAX)
+    assert accel_limits == (CarControllerParams.NIDEC_ACCEL_MIN, 4.0)
+    assert CarInterface.get_pid_accel_limits(CP, current_speed=12.5, cruise_speed=20.0)[1] == pytest.approx(3.5)
+    assert CarInterface.get_pid_accel_limits(CP, current_speed=30.0, cruise_speed=30.0)[1] == pytest.approx(3.0)
 
   def test_honda_camera_message_flag_uses_fingerprint_detection(self):
     toggles = get_test_toggles()
