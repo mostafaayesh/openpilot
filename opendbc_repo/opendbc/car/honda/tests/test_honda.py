@@ -9,12 +9,15 @@ from opendbc.car.honda.interface import CarInterface
 from opendbc.car.honda.carcontroller import (
   BOSCH_BRAKE_FORCE_ON,
   BOSCH_BRAKE_FORCE_RELEASE,
+  NIDEC_BRAKE_MODIFIER_MAX,
   CarController,
+  compute_gb_honda_nidec,
   get_civic_bosch_modified_steering_pressed,
   get_civic_bosch_modified_torque_lpf_tau,
   get_honda_bosch_wind_brake_mps2,
   update_honda_bosch_braking,
   update_honda_bosch_live_learning,
+  update_honda_nidec_brake_modifier,
 )
 from opendbc.car.honda.hondacan import create_acc_commands, create_lkas_hud
 from opendbc.car.honda.fingerprints import FW_VERSIONS
@@ -26,6 +29,32 @@ HONDA_FW_VERSION_RE = rb"[A-Z0-9]{5}-[A-Z0-9]{3}(-|,)[A-Z0-9]{4}(\x00){2}$"
 
 def get_test_toggles() -> SimpleNamespace:
   return SimpleNamespace(always_on_lateral_lkas=False, force_torque_controller=False, nnff=False, nnff_lite=False)
+
+
+class TestHondaNidecGasBrake:
+  def test_gas_and_brake_mapping(self):
+    gas, brake = compute_gb_honda_nidec(1.0, 10.0)
+    assert gas == pytest.approx(0.25)
+    assert brake == 0.0
+
+    gas, brake = compute_gb_honda_nidec(-2.4, 10.0)
+    assert gas == 0.0
+    assert brake == pytest.approx(0.5)
+
+  def test_creep_brake_at_low_speed(self):
+    gas, brake = compute_gb_honda_nidec(0.0, 0.0)
+    assert gas == 0.0
+    assert brake == pytest.approx(0.15)
+
+  def test_brake_modifier_ramps_only_at_max_decel_and_is_capped(self):
+    modifier = 0.0
+    for _ in range(1000):
+      modifier = update_honda_nidec_brake_modifier(modifier, -4.0)
+    assert modifier == pytest.approx(NIDEC_BRAKE_MODIFIER_MAX)
+    # full brake at the cap, and the divisor never reaches zero or flips sign
+    assert compute_gb_honda_nidec(-4.0, 10.0, modifier)[1] == pytest.approx(1.0)
+
+    assert update_honda_nidec_brake_modifier(modifier, -3.0) == 0.0
 
 
 class TestHondaFingerprint:

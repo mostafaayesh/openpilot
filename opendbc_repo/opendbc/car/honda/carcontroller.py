@@ -17,6 +17,7 @@ from opendbc.car.honda.values import (
   HondaFlags,
 )
 from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.common.pid import PIDController
 from openpilot.common.params import Params
 
@@ -25,6 +26,9 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 BOSCH_BRAKE_FORCE_ON = -0.12
 BOSCH_BRAKE_FORCE_RELEASE = -0.02
+
+NIDEC_BRAKE_MODIFIER_ACCEL = -3.9
+NIDEC_BRAKE_MODIFIER_MAX = 0.8
 
 
 def update_honda_bosch_braking(braking: bool, gas_pedal_force: float, stopping: bool, long_active: bool) -> bool:
@@ -146,21 +150,29 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-def compute_gb_honda_nidec(accel, speed):
+def compute_gb_honda_nidec(accel, speed, brake_modifier=0.0):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+  gas = float(accel) / 4.0 - creep_brake
+  brake = float(accel) / (-4.8 + brake_modifier) + creep_brake
+  return np.clip(gas, 0.0, 1.0), np.clip(brake, 0.0, 1.0)
 
 
-def compute_gas_brake(accel, speed, fingerprint):
+def update_honda_nidec_brake_modifier(brake_modifier: float, accel: float) -> float:
+  # ramp up brake strength while max deceleration is sustained, up to full brake at -4.0 m/s^2
+  if accel < NIDEC_BRAKE_MODIFIER_ACCEL:
+    return min(brake_modifier + 0.01, NIDEC_BRAKE_MODIFIER_MAX)
+  return 0.0
+
+
+def compute_gas_brake(accel, speed, fingerprint, brake_modifier=0.0):
   if fingerprint in HONDA_BOSCH:
     return compute_gb_honda_bosch(accel, speed)
   else:
-    return compute_gb_honda_nidec(accel, speed)
+    return compute_gb_honda_nidec(accel, speed, brake_modifier)
 
 
 # TODO not clear this does anything useful
@@ -259,6 +271,9 @@ class CarController(CarControllerBase):
     self.bosch_gas_factor_before_gasmax = self.bosch_gas_factor
     self.bosch_wind_factor_before_gasmax = self.bosch_wind_factor
     self.pitch = 0.0
+    # smoothed pitch for Nidec grade compensation, so body pitch from braking/accelerating doesn't feed back
+    self.nidec_pitch = FirstOrderFilter(0.0, 0.5, DT_CTRL)
+    self.nidec_brake_modifier = 0.0
     self.mvl_accord_mode = CP.carFingerprint == CAR.HONDA_ACCORD_11G
     # MVL Bosch low-speed extra-brake integrator. Active only for Accord 11G MVL mode.
     self.mvl_brake_pid = PIDController(k_p=0.0, k_i=1.0, pos_limit=0.0, neg_limit=-2.0, rate=50)
@@ -287,14 +302,20 @@ class CarController(CarControllerBase):
     min_gas = self.params.BOSCH_GAS_LOOKUP_BP[0]
     if len(CC.orientationNED) == 3:
       self.pitch = CC.orientationNED[1]
+      self.nidec_pitch.update(self.pitch)
     hill_brake = math.sin(self.pitch) * ACCELERATION_DUE_TO_GRAVITY
+    nidec_hill_brake = math.sin(self.nidec_pitch.x) * ACCELERATION_DUE_TO_GRAVITY
 
     if CC.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
+      # Nidec uses the grade-compensated request; Bosch adds hill_brake to its gas pedal force below
+      nidec_accel = actuators.accel + nidec_hill_brake
+      self.nidec_brake_modifier = update_honda_nidec_brake_modifier(self.nidec_brake_modifier, nidec_accel)
+      gas, brake = compute_gas_brake(nidec_accel, CS.out.vEgo, self.CP.carFingerprint, self.nidec_brake_modifier)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
+      self.nidec_brake_modifier = 0.0
 
     torque_cmd = float(actuators.torque)
     filtered_steering_pressed = bool(CS.out.steeringPressed)
@@ -325,7 +346,8 @@ class CarController(CarControllerBase):
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady, CS.out.vEgo, self.CP.carFingerprint)
 
     # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2.0, DT_CTRL)
+    brake_rate_up = DT_CTRL if self.CP.carFingerprint in HONDA_BOSCH else 3 * DT_CTRL
+    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2.0, brake_rate_up)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     alert_fcw, alert_steer_required = process_hud_alert(hud_control.visualAlert)
