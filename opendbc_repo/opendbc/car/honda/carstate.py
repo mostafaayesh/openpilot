@@ -156,7 +156,7 @@ class CarState(CarStateBase):
       gear_position = self.shifter_values.get(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"], None)
       ret.gearShifter = self.parse_gear_shifter(gear_position)
 
-    if CP.deprecated.enableGasInterceptor:
+    if self.CP.deprecated.enableGasInterceptor:
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = gas > 492
     else:
@@ -230,7 +230,9 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parsers(self, CP):
-    pt_messages = [("GAS_SENSOR", 0)] if CP.deprecated.enableGasInterceptor else []
+    # POWERTRAIN_DATA is otherwise registered lazily by the PEDAL_GAS read, which the interceptor path skips,
+    # and update() reads it through vl_all (which doesn't register messages)
+    pt_messages = [("GAS_SENSOR", 0), ("POWERTRAIN_DATA", 0)] if CP.deprecated.enableGasInterceptor else []
     parsers = {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus(CP).pt),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).camera),

@@ -25,7 +25,8 @@ class TestHondaEpsModified(unittest.TestCase):
     assert CP.lateralTuning.which() == 'pid'
     assert not CP.flags & HondaFlags.EPS_MODIFIED
     assert not CP.dashcamOnly
-    assert list(CP.lateralTuning.pid.kpV) == [1.1] and list(CP.lateralTuning.pid.kiV) == [0.33]
+    self.assertAlmostEqual(CP.lateralTuning.pid.kpV[0], 1.1, places=6)
+    self.assertAlmostEqual(CP.lateralTuning.pid.kiV[0], 0.33, places=6)
     assert CarControllerParams(CP).STEER_MAX == 2560
 
   def test_civic_modified_eps_uses_pid(self):
