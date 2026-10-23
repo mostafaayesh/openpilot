@@ -1,4 +1,6 @@
+import json
 import math
+import os
 import numpy as np
 
 from opendbc.can import CANPacker
@@ -8,10 +10,30 @@ from opendbc.car.honda.values import CAR, CruiseButtons, HondaFlags, CarControll
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.common.filter_simple import FirstOrderFilter
 
-try:
-  from openpilot.common.params import Params
-except ImportError:
-  Params = None
+# Learned Nidec pedal factors. Stored as a plain file rather than in Params, because new Params keys
+# need a rebuilt libparams_c.so and release branches ship that prebuilt.
+NIDEC_LEARNING_PATH = os.environ.get("HONDA_NIDEC_LEARNING_PATH", "/data/honda_nidec_learning.json")
+
+
+def load_nidec_learning(path: str) -> tuple[float, float]:
+  try:
+    with open(path) as f:
+      data = json.load(f)
+    return float(np.clip(data["gas_factor"], 0.1, 3.0)), float(np.clip(data["wind_factor"], 0.1, 5.0))
+  except (OSError, ValueError, KeyError, TypeError):
+    return 1.0, 1.0
+
+
+def save_nidec_learning(path: str, gas_factor: float, wind_factor: float) -> None:
+  # write-then-rename so a power cut mid-write can't leave a corrupt file
+  try:
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+      json.dump({"gas_factor": round(gas_factor, 6), "wind_factor": round(wind_factor, 6)}, f)
+    os.replace(tmp, path)
+  except OSError:
+    pass
+
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -110,7 +132,6 @@ class CarController(CarControllerBase):
     super().__init__(dbc_names, CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
-    self.param_store = Params() if Params is not None and CP.deprecated.enableGasInterceptor else None
     self.CAN = hondacan.CanBus(CP)
     self.tja_control = bool(CP.flags & HondaFlags.BOSCH_TJA_CONTROL)
 
@@ -131,14 +152,8 @@ class CarController(CarControllerBase):
     self.nidec_brake_modifier = 0.0
 
     # Nidec gas-pedal interceptor adaptation factors, persisted across drives
-    self.bosch_gas_factor = 1.0
-    self.bosch_wind_factor = 1.0
-    if self.param_store is not None:
-      try:
-        self.bosch_gas_factor = float(self.param_store.get("HondaGasFactorParams") or 1.0)
-        self.bosch_wind_factor = float(self.param_store.get("HondaWindFactorParams") or 1.0)
-      except Exception:
-        self.param_store = None
+    self.learning_path = NIDEC_LEARNING_PATH if CP.deprecated.enableGasInterceptor else None
+    self.bosch_gas_factor, self.bosch_wind_factor = load_nidec_learning(self.learning_path) if self.learning_path else (1.0, 1.0)
     self.bosch_wind_factor_before_brake = self.bosch_wind_factor
     self.bosch_gas_factor_before_gasmax = self.bosch_gas_factor
     self.bosch_wind_factor_before_gasmax = self.bosch_wind_factor
@@ -312,9 +327,8 @@ class CarController(CarControllerBase):
           else:
             self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
-    if self.frame > 0 and self.frame % 6000 == 0 and self.param_store is not None:
-      self.param_store.put("HondaGasFactorParams", float(round(self.bosch_gas_factor, 6)))
-      self.param_store.put("HondaWindFactorParams", float(round(self.bosch_wind_factor, 6)))
+    if self.frame > 0 and self.frame % 6000 == 0 and self.learning_path is not None:
+      save_nidec_learning(self.learning_path, self.bosch_gas_factor, self.bosch_wind_factor)
 
     new_actuators = actuators.as_builder()
     new_actuators.speed = self.speed

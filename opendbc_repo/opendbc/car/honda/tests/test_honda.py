@@ -1,8 +1,11 @@
+import os
+import tempfile
 import unittest
 
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams
-from opendbc.car.honda.carcontroller import NIDEC_BRAKE_MODIFIER_MAX, compute_gb_honda_nidec, update_honda_nidec_brake_modifier
+from opendbc.car.honda.carcontroller import NIDEC_BRAKE_MODIFIER_MAX, compute_gb_honda_nidec, load_nidec_learning, \
+                                            save_nidec_learning, update_honda_nidec_brake_modifier
 from opendbc.car.honda.interface import CarInterface
 from opendbc.car.honda.values import CAR, CarControllerParams, HondaFlags, HondaSafetyFlags
 
@@ -74,3 +77,15 @@ class TestHondaNidecLongitudinal(unittest.TestCase):
     _, brake = compute_gb_honda_nidec(-4.0, 10.0, modifier)
     self.assertAlmostEqual(brake, 1.0)
     assert update_honda_nidec_brake_modifier(modifier, -3.0) == 0.0
+
+  def test_learning_persistence(self):
+    with tempfile.TemporaryDirectory() as d:
+      path = os.path.join(d, "learning.json")
+      assert load_nidec_learning(path) == (1.0, 1.0)
+      save_nidec_learning(path, 1.37, 0.82)
+      gas, wind = load_nidec_learning(path)
+      self.assertAlmostEqual(gas, 1.37)
+      self.assertAlmostEqual(wind, 0.82)
+      with open(path, "w") as f:
+        f.write("{corrupt")
+      assert load_nidec_learning(path) == (1.0, 1.0)
