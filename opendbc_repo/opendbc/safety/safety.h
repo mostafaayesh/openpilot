@@ -65,6 +65,8 @@ bool regen_braking_prev = false;
 bool steering_disengage;
 bool steering_disengage_prev;
 bool cruise_engaged_prev = false;
+bool enable_gas_interceptor = false;
+int gas_interceptor_prev = 0;
 struct sample_t vehicle_speed;
 struct sample_t vehicle_speed_2;
 bool vehicle_moving = false;
@@ -434,6 +436,8 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   steering_disengage = false;
   steering_disengage_prev = false;
   cruise_engaged_prev = false;
+  enable_gas_interceptor = false;
+  gas_interceptor_prev = 0;
   vehicle_moving = false;
   acc_main_on = false;
   cruise_button_prev = 0;

@@ -1,13 +1,23 @@
+import math
 import numpy as np
 
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, Bus, DT_CTRL, create_gas_interceptor_command, rate_limit, make_tester_present_msg, structs
 from opendbc.car.honda import hondacan
 from opendbc.car.honda.values import CAR, CruiseButtons, HondaFlags, CarControllerParams
 from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.common.filter_simple import FirstOrderFilter
+
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  Params = None
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
+
+NIDEC_BRAKE_MODIFIER_ACCEL = -3.9
+NIDEC_BRAKE_MODIFIER_MAX = 0.8
 
 
 def compute_gb_honda_bosch(accel, speed):
@@ -15,21 +25,29 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-def compute_gb_honda_nidec(accel, speed):
+def compute_gb_honda_nidec(accel, speed, brake_modifier=0.0):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+  gas = float(accel) / 4.0 - creep_brake
+  brake = float(accel) / (-4.8 + brake_modifier) + creep_brake
+  return np.clip(gas, 0.0, 1.0), np.clip(brake, 0.0, 1.0)
 
 
-def compute_gas_brake(accel, speed, CP):
+def update_honda_nidec_brake_modifier(brake_modifier: float, accel: float) -> float:
+  # ramp up brake strength while max deceleration is sustained, up to full brake at -4.0 m/s^2
+  if accel < NIDEC_BRAKE_MODIFIER_ACCEL:
+    return min(brake_modifier + 0.01, NIDEC_BRAKE_MODIFIER_MAX)
+  return 0.0
+
+
+def compute_gas_brake(accel, speed, CP, brake_modifier=0.0):
   if CP.flags & HondaFlags.BOSCH:
     return compute_gb_honda_bosch(accel, speed)
   else:
-    return compute_gb_honda_nidec(accel, speed)
+    return compute_gb_honda_nidec(accel, speed, brake_modifier)
 
 
 # TODO not clear this does anything useful
@@ -92,6 +110,7 @@ class CarController(CarControllerBase):
     super().__init__(dbc_names, CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
+    self.param_store = Params() if Params is not None and CP.deprecated.enableGasInterceptor else None
     self.CAN = hondacan.CanBus(CP)
     self.tja_control = bool(CP.flags & HondaFlags.BOSCH_TJA_CONTROL)
 
@@ -107,6 +126,22 @@ class CarController(CarControllerBase):
     self.gas = 0.0
     self.brake = 0.0
     self.last_torque = 0.0
+    # smoothed pitch for Nidec grade compensation, so body pitch from braking/accelerating doesn't feed back
+    self.nidec_pitch = FirstOrderFilter(0.0, 0.5, DT_CTRL)
+    self.nidec_brake_modifier = 0.0
+
+    # Nidec gas-pedal interceptor adaptation factors, persisted across drives
+    self.bosch_gas_factor = 1.0
+    self.bosch_wind_factor = 1.0
+    if self.param_store is not None:
+      try:
+        self.bosch_gas_factor = float(self.param_store.get("HondaGasFactorParams") or 1.0)
+        self.bosch_wind_factor = float(self.param_store.get("HondaWindFactorParams") or 1.0)
+      except Exception:
+        self.param_store = None
+    self.bosch_wind_factor_before_brake = self.bosch_wind_factor
+    self.bosch_gas_factor_before_gasmax = self.bosch_gas_factor
+    self.bosch_wind_factor_before_gasmax = self.bosch_wind_factor
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -114,12 +149,20 @@ class CarController(CarControllerBase):
     hud_v_cruise = hud_control.setSpeed / CS.v_cruise_factor if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
+    if len(CC.orientationNED) == 3:
+      self.nidec_pitch.update(CC.orientationNED[1])
+    nidec_hill_brake = math.sin(self.nidec_pitch.x) * ACCELERATION_DUE_TO_GRAVITY
+
     if CC.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP)
+      # Nidec uses the grade-compensated request; Bosch is unaffected since compute_gb_honda_bosch is unused
+      nidec_accel = actuators.accel + nidec_hill_brake
+      self.nidec_brake_modifier = update_honda_nidec_brake_modifier(self.nidec_brake_modifier, nidec_accel)
+      gas, brake = compute_gas_brake(nidec_accel, CS.out.vEgo, self.CP, self.nidec_brake_modifier)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
+      self.nidec_brake_modifier = 0.0
 
     # *** rate limit steer ***
     limited_torque = rate_limit(actuators.torque, self.last_torque, -self.params.STEER_DELTA_DOWN * DT_CTRL,
@@ -130,7 +173,8 @@ class CarController(CarControllerBase):
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady)
 
     # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
+    brake_rate_up = DT_CTRL if self.CP.flags & HondaFlags.BOSCH else 3 * DT_CTRL
+    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., brake_rate_up)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     alert_fcw, alert_steer_required = process_hud_alert(hud_control.visualAlert)
@@ -138,7 +182,7 @@ class CarController(CarControllerBase):
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_torque = int(np.clip(-limited_torque, -1.0, 1.0) * self.params.STEER_MAX)
+    apply_torque = int(np.interp(-limited_torque * self.params.STEER_MAX, self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
 
     # Send CAN commands
     can_sends = []
@@ -162,7 +206,11 @@ class CarController(CarControllerBase):
                     0.5]
     # The Honda ODYSSEY seems to have different PCM_ACCEL
     # msgs, is it other cars too?
+    gas_interceptor_command = 0.0
     if not CC.longActive:
+      pcm_speed = 0.0
+      pcm_accel = int(0.0)
+    elif self.CP.deprecated.enableGasInterceptor:
       pcm_speed = 0.0
       pcm_accel = int(0.0)
     elif self.CP.flags & HondaFlags.NIDEC_ALT_PCM_ACCEL:
@@ -213,6 +261,33 @@ class CarController(CarControllerBase):
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
+          if self.CP.deprecated.enableGasInterceptor:
+            gas_error = actuators.accel - CS.out.aEgo
+
+            if not CS.out.gasPressed and actuators.longControlState == LongCtrlState.pid:
+              if gas_error != 0.0 and gas > 0.0:
+                self.bosch_gas_factor = float(np.clip(self.bosch_gas_factor + gas_error / 150.0 * (gas * 4.8), 0.1, 3.0))
+              if gas_error != 0.0 and not CS.out.brakePressed and CS.out.vEgo > 0.0:
+                wind_adjust = 1.0 + (wind_brake * 4.8) / 1000.0
+                if gas_error > 0.0:
+                  self.bosch_wind_factor = float(np.clip(self.bosch_wind_factor * wind_adjust, 0.1, 5.0))
+                else:
+                  self.bosch_wind_factor = float(np.clip(self.bosch_wind_factor / wind_adjust, 0.1, 5.0))
+              if gas <= 0.0:
+                self.bosch_wind_factor = max(self.bosch_wind_factor, self.bosch_wind_factor_before_brake)
+              else:
+                self.bosch_wind_factor_before_brake = self.bosch_wind_factor
+
+            gas_mult = float(np.interp(CS.out.vEgo, [0.0, 10.0], [0.4, 1.0]))
+            if CC.longActive:
+              gas_interceptor_command = float(np.clip(
+                gas_mult * ((gas * self.bosch_gas_factor) - brake + (wind_brake * self.bosch_wind_factor * 3.0 / 4.0)),
+                0.0,
+                1.0,
+              ))
+            idx = (self.frame // 2) % 0x10
+            can_sends.append(create_gas_interceptor_command(self.packer, gas_interceptor_command, idx))
+
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
       if self.CP.openpilotLongitudinalControl:
@@ -232,7 +307,14 @@ class CarController(CarControllerBase):
           can_sends.append(hondacan.create_legacy_brake_command(self.packer, self.CAN.pt))
         if not (self.CP.flags & HondaFlags.BOSCH):
           self.speed = pcm_speed
-          self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
+          if self.CP.deprecated.enableGasInterceptor:
+            self.gas = gas_interceptor_command
+          else:
+            self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
+
+    if self.frame > 0 and self.frame % 6000 == 0 and self.param_store is not None:
+      self.param_store.put("HondaGasFactorParams", float(round(self.bosch_gas_factor, 6)))
+      self.param_store.put("HondaWindFactorParams", float(round(self.bosch_wind_factor, 6)))
 
     new_actuators = actuators.as_builder()
     new_actuators.speed = self.speed

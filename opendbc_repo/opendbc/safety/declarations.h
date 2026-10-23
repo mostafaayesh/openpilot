@@ -249,6 +249,7 @@ bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limit
 bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limits);
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
 bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limits);
+bool longitudinal_interceptor_checks(const CANPacket_t *to_send);
 void pcm_cruise_check(bool cruise_engaged);
 void speed_mismatch_check(const float speed_2);
 
@@ -266,6 +267,8 @@ extern bool regen_braking_prev;
 extern bool steering_disengage;
 extern bool steering_disengage_prev;
 extern bool cruise_engaged_prev;
+extern bool enable_gas_interceptor;
+extern int gas_interceptor_prev;
 extern struct sample_t vehicle_speed;
 extern struct sample_t vehicle_speed_2;
 extern bool vehicle_moving;

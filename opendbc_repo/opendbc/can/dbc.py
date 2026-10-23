@@ -42,6 +42,7 @@ class SignalType:
   RIVIAN_CHECKSUM = 15
   FORD_CHECKSUM = 16
   MG_CHECKSUM = 17
+  PEDAL_CHECKSUM = 18
 
 
 @dataclass
@@ -267,3 +268,29 @@ def set_signal_type(sig: Signal, chk: ChecksumState | None, dbc_name: str, line_
       sig.calc_checksum = chk.calc_checksum
     elif sig.name == "COUNTER":
       sig.type = SignalType.COUNTER
+
+  # Legacy interceptor support: these names are used on GAS_SENSOR / GAS_COMMAND.
+  if sig.name == "CHECKSUM_PEDAL":
+    if sig.size != 8:
+      raise RuntimeError(f"CHECKSUM_PEDAL not 8 bits long in {dbc_name}:{line_num}")
+    sig.type = SignalType.PEDAL_CHECKSUM
+    sig.calc_checksum = pedal_checksum
+  elif sig.name == "COUNTER_PEDAL":
+    if sig.size != 4:
+      raise RuntimeError(f"COUNTER_PEDAL not 4 bits long in {dbc_name}:{line_num}")
+    sig.type = SignalType.COUNTER
+
+
+def pedal_checksum(address: int, sig: Signal, d: bytearray) -> int:
+  # CRC8 over payload excluding CHECKSUM_PEDAL byte (last byte), matches legacy parser behavior.
+  crc = 0xFF
+  poly = 0xD5
+  for i in range(len(d) - 2, -1, -1):
+    crc ^= d[i]
+    for _ in range(8):
+      if (crc & 0x80) != 0:
+        crc = ((crc << 1) ^ poly) & 0xFF
+      else:
+        crc = (crc << 1) & 0xFF
+  return crc
+

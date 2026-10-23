@@ -28,6 +28,8 @@ class CarControllerParams:
 
   NIDEC_GAS_MAX = 198  # 0xc6
   NIDEC_BRAKE_MAX = 1024 // 4
+  NIDEC_PEDAL_ACCEL_MAX_BP = [0., 5., 20.]  # m/s
+  NIDEC_PEDAL_ACCEL_MAX_V = [4.0, 4.0, 3.0]  # m/s^2
 
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
   BOSCH_ACCEL_MAX = 2.0  # m/s^2
@@ -60,6 +62,16 @@ class CarControllerParams:
       # Odyssey MMR uses up to 2560 for LKA; higher RDM commands are nonlinear and also apply brake drag.
       self.STEER_MAX = 2560
 
+    # Modified EPS firmware accepts larger requests than stock; map openpilot's request through the EPS output curve.
+    eps_lookup = EPS_MODIFIED_TORQUE_LOOKUP.get(CP.carFingerprint) if CP.flags & HondaFlags.EPS_MODIFIED else None
+    if eps_lookup is not None:
+      torque_bp, torque_v = eps_lookup
+      self.STEER_MAX = torque_bp[-1]
+    else:
+      torque_bp, torque_v = [0, self.STEER_MAX], [0, self.STEER_MAX]
+    self.STEER_LOOKUP_BP = [-v for v in torque_bp][1:][::-1] + list(torque_bp)
+    self.STEER_LOOKUP_V = [-v for v in torque_v][1:][::-1] + list(torque_v)
+
 
 class HondaSafetyFlags(IntFlag):
   ALT_BRAKE = 1
@@ -67,6 +79,7 @@ class HondaSafetyFlags(IntFlag):
   NIDEC_ALT = 4
   RADARLESS = 8
   BOSCH_CANFD = 16
+  GAS_INTERCEPTOR = 32
 
 
 class HondaFlags(IntFlag):
@@ -90,6 +103,7 @@ class HondaFlags(IntFlag):
   HAS_BSM = 1024  # blind spot monitoring
   HYBRID = 2048
   BOSCH_TJA_CONTROL = 4096
+  EPS_MODIFIED = 8192
 
 
 # Car button codes
@@ -418,6 +432,12 @@ class CAR(Platforms):
 
 DBC = CAR.create_dbc_map()
 
+# (request breakpoints, EPS output) for EPS firmware modified with hondaeps; see interface.py for the flashed tables
+EPS_MODIFIED_TORQUE_LOOKUP = {
+  CAR.HONDA_CIVIC: ([0, 2560, 15360], [0, 2560, 3840]),
+  CAR.HONDA_CRV_5G: ([0, 2560, 10000], [0, 2560, 3840]),
+}
+
 
 STEER_THRESHOLD = {
   # default is 1200, overrides go here
@@ -476,7 +496,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # Note that we still attempt to match with them when they are present
   # This is or'd with (ALL_ECUS - ESSENTIAL_ECUS) from fw_versions.py
   non_essential_ecus={
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E, CAR.HONDA_E_ADVANCE, CAR.ACURA_MDX_4G,
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_E, CAR.HONDA_E_ADVANCE, CAR.ACURA_MDX_4G,
               *[c for c in CAR if c.config.flags & (HondaFlags.BOSCH_ALT_RADAR | HondaFlags.BOSCH_RADARLESS | HondaFlags.BOSCH_CANFD)]],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E,
               CAR.HONDA_E_ADVANCE, CAR.HONDA_INSIGHT, CAR.HONDA_NBOX_2G, CAR.ACURA_MDX_4G,
