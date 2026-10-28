@@ -55,20 +55,3 @@ class SettingsLayout(NavScroller):
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
 
-  def show_pairing(self):
-    gui_app.push_widget(self)
-    # add settings in the back stack without showing its entrance animation.
-    self._y_pos_filter.x = 0.0
-    self.set_visible(lambda: self.enabled or self._device_panel.is_dismissing)
-    self.set_shown_callback(self._scroll_to_device)
-    gui_app.push_widget(self._device_panel)
-    self._device_panel.set_shown_callback(self._on_pairing_shown)
-
-  def _scroll_to_device(self):
-    self._scroller._layout()
-    offset = (self._device_button.rect.x + self._device_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-    self._scroller.scroll_to(offset, smooth=False)
-
-  def _on_pairing_shown(self):
-    self.set_visible(True)
-    self._device_panel.scroll_to_pairing()

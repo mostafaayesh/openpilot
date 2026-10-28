@@ -315,7 +315,6 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   device_cases: Cases = [
     None,
     click,  # update
-    explore_setting,  # pairing (just open and close)
     lambda: explore_setting(
       # training guide
       lambda: swipe_left(width * 2), click,  # first page, click next
@@ -427,10 +426,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
-  # Go through different prime state layouts
-  add_prime_state_setup(PrimeType.LITE)
   add_prime_state_setup(PrimeType.NONE)
-  add_prime_state_setup(PrimeType.UNPAIRED)
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
@@ -443,10 +439,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(150, 90)
 
   # === Settings - Device ===
-  # pair device
-  script.click(2000, 450)  # pair device
-  script.click(110, 110)  # close pairing dialog
-  add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
   # calibration
   script.setup(setup_calibration_params, wait_after=0)
   script.click(1000, 620)  # expand calibration description
