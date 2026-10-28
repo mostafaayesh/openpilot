@@ -434,7 +434,16 @@ DBC = CAR.create_dbc_map()
 
 # (request breakpoints, EPS output) for EPS firmware modified with hondaeps; see interface.py for the flashed tables
 EPS_MODIFIED_TORQUE_LOOKUP = {
-  CAR.HONDA_CIVIC: ([0, 2560, 15360], [0, 2560, 3840]),
+  # For eps_tool_tba.py -wall firmware (0x5000 table top). True inverse of the EPS response
+  # curve T(0.43301 * c) over the flashed table: achieved column torque is exactly proportional
+  # to the request across the whole range, so one PID tune works at every demand level (the
+  # previous front-loaded map compressed the top 83% of demand into 18% of the torque, which
+  # is what made tight-turn authority mushy at high demand). v maxes at 4095 (full 12-bit
+  # STEER_TORQUE): panda enforces no magnitude limit on 0xE4 and the opendbc packer masks
+  # rather than clips, so 3840..4095 is safe. Full demand -> CAN 4095 -> x 0x6ED -> T 0x4FED
+  # (3.55x stock plateau). PID gains in interface.py are scaled to match this plant gain.
+  CAR.HONDA_CIVIC: ([0, 1747, 2646, 3092, 3386, 3852, 7687, 11530, 15360],
+                    [0, 513, 769, 1143, 1515, 2048, 2559, 3584, 4095]),
   CAR.HONDA_CRV_5G: ([0, 2560, 10000], [0, 2560, 3840]),
 }
 

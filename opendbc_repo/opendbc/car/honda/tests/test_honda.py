@@ -38,14 +38,16 @@ class TestHondaEpsModified(unittest.TestCase):
     assert CP.flags & HondaFlags.EPS_MODIFIED
     assert not CP.dashcamOnly
     pid = CP.lateralTuning.pid
-    self.assertAlmostEqual(pid.kpV[0], 0.1575, places=6)
-    self.assertAlmostEqual(pid.kiV[0], 0.05175, places=6)
-    self.assertAlmostEqual(pid.kf, 0.00004, places=9)
+    self.assertAlmostEqual(pid.kpV[0], 0.542, places=6)
+    self.assertAlmostEqual(pid.kiV[0], 0.178, places=6)
+    self.assertAlmostEqual(pid.kf, 0.000138, places=9)
 
     params = CarControllerParams(CP)
     assert params.STEER_MAX == 15360
-    assert params.STEER_LOOKUP_BP == [-15360, -2560, 0, 2560, 15360]
-    assert params.STEER_LOOKUP_V == [-3840, -2560, 0, 2560, 3840]
+    assert params.STEER_LOOKUP_BP == [-15360, -11530, -7687, -3852, -3386, -3092, -2646, -1747,
+                                      0, 1747, 2646, 3092, 3386, 3852, 7687, 11530, 15360]
+    assert params.STEER_LOOKUP_V == [-4095, -3584, -2559, -2048, -1515, -1143, -769, -513,
+                                     0, 513, 769, 1143, 1515, 2048, 2559, 3584, 4095]
 
   def test_crv_5g_modified_eps(self):
     CP = get_params(CAR.HONDA_CRV_5G, b'39990-TLA,A040\x00\x00')
