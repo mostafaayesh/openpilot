@@ -9,7 +9,6 @@ import urllib.parse
 from datetime import datetime, UTC
 
 from openpilot.cereal import log, messaging
-from openpilot.common.api import Api
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.serial import Serial
@@ -45,19 +44,15 @@ def add_ubx_checksum(msg: bytes) -> bytes:
 
 def get_assistnow_messages() -> list[bytes]:
   params = Params()
-  if token := params.get('AssistNowToken'):
-    cloudlog.warning("Downloading AssistNow data directly from u-blox")
-    r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
-      'token': token,
-      'gnss': 'gps,glo',
-      'datatype': 'eph,alm,aux',
-    }, safe=':,'), timeout=5)
-  elif dongle_id := params.get('DongleId'):
-    cloudlog.warning("Downloading AssistNow data from comma's AGPS proxy")
-    api = Api(dongle_id)
-    r = api.get(f"v1/{dongle_id}/assist", access_token=api.get_token(), timeout=5)
-  else:
-    raise RuntimeError("Neither AssistNowToken nor DongleId is configured")
+  if not (token := params.get('AssistNowToken')):
+    raise RuntimeError("AssistNowToken is not configured")
+
+  cloudlog.warning("Downloading AssistNow data directly from u-blox")
+  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+    'token': token,
+    'gnss': 'gps,glo',
+    'datatype': 'eph,alm,aux',
+  }, safe=':,'), timeout=5)
 
   r.raise_for_status()
   dat = r.content
@@ -325,7 +320,8 @@ def run_receiving(duration: int = 0):
         except Exception:
           cloudlog.warning("failed to get AssistNow messages")
       time.sleep(10.)
-  threading.Thread(target=download_assistnow, daemon=True).start()
+  if Params().get('AssistNowToken'):
+    threading.Thread(target=download_assistnow, daemon=True).start()
 
   while (duration == 0) or (time.monotonic() - start_time < duration):
     if assist_messages is not None and not assist_attempted:

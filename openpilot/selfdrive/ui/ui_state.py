@@ -135,7 +135,6 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
     if self._params_thread is None:
       self._params_thread = threading.Thread(target=self._params_refresh_worker, daemon=True)
       self._params_thread.start()
